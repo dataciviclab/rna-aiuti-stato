@@ -6,17 +6,17 @@ al volo, senza mai scriverlo su disco. I worker paralleli saturano
 la banda di rete, non la CPU.
 
 Uso:
-    # Campione: 4 anni (default)
-    python3 scripts/full_batch.py
-
-    # Periodo specifico
+    # Periodo specifico (default 2 worker)
     python3 scripts/full_batch.py --from 2023 --to 2025
 
     # Full (tutti i 133 file)
     python3 scripts/full_batch.py --full
 
+    # Summary
+    python3 scripts/full_batch.py --summary
+
     # Parallelismo
-    python3 scripts/full_batch.py --workers 6
+    python3 scripts/full_batch.py --full --workers 4
 """
 
 from __future__ import annotations
@@ -28,12 +28,17 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
-import urllib.request
 import lxml.etree as ET
+import urllib.request
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from rna_aiuti.parser import flatten_aiuto
-from scripts.extract import write_partition, _parse_year_month, _to_table
+from rna_aiuti.parser import (
+    flatten_aiuto,
+    parse_year_month,
+    write_partition,
+    XMLCharFilter,
+    XMLTagFixer,
+    summary as _summary,
+)
 
 logger = logging.getLogger("rna.batch")
 
@@ -43,50 +48,19 @@ USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Ge
 MAX_RETRIES = 5
 RETRY_DELAY = 10  # secondi
 
-# Tutti gli URL RNA
+# Tutti gli URL RNA (2017-01 → 2026-06)
 RNA_URLS = [
     f"https://www.rna.gov.it/sites/rna.mise.gov.it/files/opendata/OpenData_Aiuti_{y:04d}_{m:02d}.xml"
     for y in range(2017, 2027)
     for m in range(1, 13)
-    if not (y == 2026 and m > 6)  # ferma a marzo 2026
+    if not (y == 2026 and m > 6)
 ]
-
-
-class _XMLCharFilter:
-    """Wrapper file-like che filtra caratteri XML non validi dallo stream."""
-    _ALLOWED = frozenset({0x09, 0x0A, 0x0D})
-
-    def __init__(self, stream):
-        self.stream = stream
-        self._buf = b""
-
-    def read(self, n: int = -1) -> bytes:
-        if n == -1:
-            data = self.stream.read()
-        else:
-            if len(self._buf) >= n:
-                data = self._buf[:n]
-                self._buf = self._buf[n:]
-                return data
-            data = self._buf + self.stream.read(n - len(self._buf))
-            self._buf = b""
-        if isinstance(data, bytes):
-            return bytes(b for b in data if b >= 0x20 or b in self._ALLOWED)
-        return data
-
-    def readinto(self, b: bytearray) -> int:
-        data = self.read(len(b))
-        n = len(data)
-        b[:n] = data
-        return n
-
-    def close(self):
-        self.stream.close()
 
 
 def _download_with_retry(url: str) -> object:
     """Download con retry e backoff. Restituisce file-like object (XML filtrato)."""
     import urllib.error
+
     last_error = None
     for attempt in range(1, MAX_RETRIES + 1):
         try:
@@ -95,37 +69,39 @@ def _download_with_retry(url: str) -> object:
                 "Accept": "application/xml, text/xml, */*",
             })
             resp = urllib.request.urlopen(req, timeout=600)
-            return _XMLCharFilter(resp)
+            return XMLCharFilter(resp)
         except (urllib.error.URLError, OSError) as e:
             last_error = e
             fname = url.split("/")[-1]
             logger.warning("  ⚠ %s tentativo %d/%d: %s", fname, attempt, MAX_RETRIES, e)
             if attempt < MAX_RETRIES:
-                time.sleep(RETRY_DELAY * attempt)  # backoff: 10, 20, 30...
+                time.sleep(RETRY_DELAY * attempt)
     raise last_error  # type: ignore
 
 
 def process_url(url: str) -> dict:
     """Scarica in streaming e parse un file RNA.
 
-    Non scrive mai l'XML su disco. Restituisce {anno: [righe]}.
+    Restituisce {anno: [righe]}.
     """
     fname = url.split("/")[-1]
     logger.info("  ↓ %s", fname)
     t0 = time.time()
 
     resp = _download_with_retry(url)
+    # Filtra tag troncati noti (BASE_GIURIDICA_NAZ, IMPORTO_NOMIN, …)
+    resp = XMLTagFixer(resp)
 
     rows_by_year: dict[int, list] = {}
     total_aiuti = 0
 
     context = ET.iterparse(resp, events=("end",), tag=TAG_AIUTO,
-                           parser=ET.XMLParser(recover=True))
+                           recover=True)
     for _event, elem in context:
         total_aiuti += 1
         flat_rows = flatten_aiuto(elem)
         for row in flat_rows:
-            anno, mese = _parse_year_month(row.get("data_concessione", ""))
+            anno, mese = parse_year_month(row.get("data_concessione", ""))
             row["anno"] = anno
             row["mese"] = mese
             rows_by_year.setdefault(anno, []).append(row)
@@ -147,10 +123,7 @@ def build_url_list(from_year: int, to_year: int) -> list[str]:
     def _year(url: str) -> int:
         fname = url.split("/")[-1].replace(".xml", "")
         return int(fname.split("_")[2])
-    return [
-        u for u in RNA_URLS
-        if from_year <= _year(u) <= to_year
-    ]
+    return [u for u in RNA_URLS if from_year <= _year(u) <= to_year]
 
 
 def main():
@@ -159,17 +132,25 @@ def main():
                         help="Anno iniziale (default: 2017)")
     parser.add_argument("--to", dest="to_year", type=int, default=2026,
                         help="Anno finale (default: 2026)")
-    parser.add_argument("--workers", type=int, default=2,
-                        help="Worker paralleli (default: 2, VM 6GB RAM)")
+    parser.add_argument("--workers", type=int, default=4,
+                        help="Worker paralleli (default: 4, picco RAM < 500 MB)")
     parser.add_argument("--full", action="store_true",
                         help="Processa tutti i 133 file (override --from/--to)")
     parser.add_argument("-o", "--out", type=str, default="data/derived/rna",
                         help="Directory output parquet (default: data/derived/rna)")
+    parser.add_argument("--summary", action="store_true",
+                        help="Mostra riepilogo dei parquet nella directory output")
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(message)s")
 
     out_dir = Path(args.out)
+
+    # Se --summary, mostra e basta
+    if args.summary:
+        _summary(out_dir)
+        return
+
     out_dir.mkdir(parents=True, exist_ok=True)
 
     # Seleziona URL
@@ -184,10 +165,19 @@ def main():
     logger.info("Output: %s", out_dir)
     logger.info("")
 
+    # Pulisce parquet esistenti per gli anni target (ogni run ricostruisce
+    # da zero gli anni richiesti — niente accumulo tra run)
+    if args.full:
+        for f in out_dir.glob("rna_*.parquet"):
+            f.unlink()
+    else:
+        for y in range(args.from_year, args.to_year + 1):
+            (out_dir / f"rna_{y}.parquet").unlink(missing_ok=True)
+
     t_start = time.time()
-    years_data: dict[int, list] = {}
     done = 0
     failed = 0
+    total_rows = 0
 
     with ThreadPoolExecutor(max_workers=args.workers) as executor:
         futmap = {executor.submit(process_url, u): u for u in urls}
@@ -198,22 +188,17 @@ def main():
             try:
                 result = fut.result()
                 for y, rows in result.items():
-                    years_data.setdefault(y, []).extend(rows)
+                    if y == 0:
+                        continue
+                    # Appende SUBITO per file — niente accumulo in RAM.
+                    # Ogni run parte da parquet puliti (cleanup sopra),
+                    # quindi i mesi si accumulano senza duplicati.
+                    write_partition(rows, out_dir, y, mode="append", dedup=False)
+                    total_rows += len(rows)
                 done += 1
             except Exception as e:
                 logger.error("  ✗ %s: %s", fname, e)
                 failed += 1
-
-    # Scrive partizioni annuali
-    logger.info("")
-    logger.info("Scrittura partizioni per anno ...")
-    total_rows = 0
-    for year in sorted(years_data):
-        rows = years_data[year]
-        if not rows or year == 0:
-            continue
-        write_partition(rows, out_dir, year)
-        total_rows += len(rows)
 
     elapsed = time.time() - t_start
     logger.info("")
@@ -223,9 +208,7 @@ def main():
     logger.info("  Tempo:  %.1f min", elapsed / 60)
 
     # Summary
-    total_mb = sum(
-        f.stat().st_size for f in out_dir.glob("rna_*.parquet")
-    ) / 1_000_000
+    total_mb = sum(f.stat().st_size for f in out_dir.glob("rna_*.parquet")) / 1_000_000
     logger.info("  Output: %s (%.0f MB)", out_dir, total_mb)
 
 

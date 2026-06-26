@@ -6,22 +6,24 @@ Questo progetto estrae i dati del [Registro Nazionale Aiuti di Stato](https://ww
 
 ## Cosa contiene
 
-| Dimensioni | 2017 (completo) |
+| | 2017 (completo) |
 |---|---|
 | File XML sorgente | 12 file, ~3 GB |
 | Parquet finale | **11 MB** (compressione 270:1) |
 | Aiuti | 216.931 |
 | Beneficiari unici | decine di migliaia |
-| Concedenti | Ministeri, Regioni, Camere di Commercio, INPS, INAIL, ... |
+| Concedenti | Ministeri, Regioni, Camere di Commercio, INPS, INAIL, … |
 
-### Schema (29 campi)
+### Schema (31 campi)
 
 Una riga = una combinazione **Aiuto × Componente × Strumento**.
 
 ```
 data_concessione         # quando
+car, cor                # codici identificativi
 denominazione_beneficiario  # chi (ragione sociale)
 codice_fiscale_beneficiario # chi (CF/P.IVA)
+tipo_beneficiario        # PMI, Grande impresa, …
 regione_beneficiario     # dove
 soggetto_concedente      # chi ha erogato
 titolo_misura            # per cosa (legge/regime)
@@ -29,7 +31,7 @@ elemento_aiuto           # quanto (EUR) — ESL effettivo
 importo_nominale         # quanto (EUR) — valore operazione
 procedimento             # De Minimis / Notifica / Esenzione
 settore_attivita         # NACE Rev.2 (es. J.62.0 software)
-strumento                # Sovvenzione, Prestito, Garanzia, ...
+strumento                # Sovvenzione, Prestito, Garanzia, …
 cup                      # Codice Unico di Progetto
 anno, mese               # partizione
 ```
@@ -45,14 +47,17 @@ Vedi [dataset.yml](dataset.yml) per lo schema completo.
 ## Uso rapido
 
 ```bash
-# Installa
-pip install -e "."
+# Installa il pacchetto (obbligatorio prima del primo uso)
+pip install -e ".[dev]"
 
-# Estrai un anno in streaming (zero storage raw, 3 worker paralleli)
-python3 scripts/full_batch.py --from 2023 --to 2025 --workers 3
+# Summary dei parquet già processati
+python3 scripts/full_batch.py --summary
 
-# Summary
-python3 scripts/full_batch.py --summary data/derived/rna
+# Estrai un periodo in streaming parallelo (4 worker, RAM < 500 MB)
+python3 scripts/full_batch.py --from 2023 --to 2025
+
+# Full (tutti i 114 file, ~3 ore con 4 worker)
+python3 scripts/full_batch.py --full
 ```
 
 ### Query esempio
@@ -93,27 +98,51 @@ ORDER BY totale DESC
 ```
 rna-aiuti-stato/
 ├── rna_aiuti/
-│   └── parser.py          ← parsing XML puro (funzioni pure)
+│   ├── __init__.py          ← API pubblica del pacchetto
+│   └── parser.py            ← SINGLE SOURCE OF TRUTH: parsing XML puro,
+│                               schema PyArrow, I/O parquet, filtri stream
 ├── scripts/
-│   ├── extract.py          ← file → parquet
-│   └── full_batch.py       ← HTTP streaming → parquet (parallelo)
+│   ├── extract.py           ← CLI per singolo file / batch locale (thin)
+│   └── full_batch.py        ← CI pipeline: download HTTP streaming + workers
+├── tests/
+│   └── test_parser.py       ← 20 test: parsing, schema, stream filter, I/O
 ├── data/
-│   ├── raw/                ← NON in git (solo cache opzionale)
-│   └── derived/rna/        ← parquet annuali (rna_YYYY.parquet)
-├── dataset.yml             ← catalogo Lab
+│   ├── raw/                 ← NON in git (solo cache opzionale)
+│   └── derived/rna/         ← parquet annuali (rna_YYYY.parquet)
+├── dataset.yml              ← catalogo Lab
 ├── pyproject.toml
 └── README.md
 ```
 
 **Streaming**: il download HTTP e il parsing XML avvengono contemporaneamente — nessun file XML viene mai scritto su disco. `lxml.iterparse` processa un `<AIUTO>` alla volta mentre `urllib` scarica il resto.
 
-**Parallelismo**: i file mensili sono indipendenti → `ThreadPoolExecutor` con 3-4 worker.
+**Parallelismo**: i file mensili sono indipendenti → `ThreadPoolExecutor` con 4 worker. La memoria non accumula dati: ogni file viene scritto subito su disco (append per anno), il picco RAM è sotto 500 MB anche con 4 worker paralleli.
 
-**Storage finale**: ~11 MB per anno di parquet (vs ~3 GB di XML sorgente). Compressione media 270:1.
+**Storage finale**: ~50 MB per anno di parquet (vs ~5-10 GB di XML sorgente). Compressione media 100:1-200:1.
+
+**Scrittura incrementale**: a ogni run, i parquet degli anni richiesti vengono ricreati da zero (cleanup iniziale + append per mese). Niente accumulo tra run, niente dedup (i dati RNA non hanno duplicati).
+
+**Robustezza**: due filtri in cascata sullo stream XML — `XMLCharFilter` rimuove byte XML non validi, `XMLTagFixer` corregge tag troncati nei file della fonte (BASE_GIURIDICA_NAZ → BASE_GIURIDICA_NAZIONALE, IMPORTO_NOMIN → IMPORTO_NOMINALE).
 
 ## CI
 
-Il batch completo (133 file, 2017-2026) processa in ~30-45 minuti su un runner GitHub Actions standard e produce ~1.5 GB di parquet. Lo streaming mantiene la memoria sotto i 300 MB.
+Il batch completo (114 file, 2017-2026, ~40 GB di XML) processa in ~3 ore su un runner self-hosted (Oracle Cloud, ARM64, 6GB RAM). Ogni file viene scritto subito su disco — picco RAM sotto 500 MB anche con 4 worker paralleli.
+
+Per l'aggiornamento mensile si processano solo i mesi nuovi (1-3 file, ~3-8 minuti).
+
+### Workflow `test`
+Attivato su push/PR: installa il pacchetto, esegue i test. CI bloccante.
+
+### Workflow `build`
+Attivato su schedule (mensile) o manualmente. Processa i file RNA, scrive parquet, pusha a GCS, aggiorna MANIFEST.json.
+
+## Manutenzione — aggiungere un campo
+
+Lo schema è definito in **un solo posto**: `rna_aiuti/parser.py` (variabili `SCHEMA` e `FIELD_NAMES`).  
+Se aggiungi un campo:
+1. Aggiorna `SCHEMA` in `parser.py`
+2. Aggiorna `dataset.yml` per la documentazione
+3. Se il campo è parte della dedup key, aggiorna `DEDUP_KEY`
 
 ## Fonti
 

@@ -58,7 +58,7 @@ jobs:
         # Self-hosted runner su Oracle Cloud Frankfurt (IP non bloccato da RNA.gov.it)
         run: |
           python3 scripts/full_batch.py ${{ steps.years.outputs.range }} \
-            --workers ${{ inputs.workers || 4 }} \
+            --workers ${{ inputs.workers || '4' }} \
             -o "$RNA_OUT"
 
       - name: Genera MANIFEST.json
