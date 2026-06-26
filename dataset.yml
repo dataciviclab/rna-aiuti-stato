@@ -1,0 +1,139 @@
+dataset:
+  name: rna_aiuti_stato
+  display_name: RNA — Aiuti di Stato alle imprese
+  description: >
+    Ogni aiuto pubblico concesso alle imprese italiane: beneficiario (CF e denominazione),
+    soggetto concedente, importo, procedimento (De Minimis/notifica/esenzione), settore NACE,
+    regione, CUP. Dati dal Registro Nazionale Aiuti di Stato (MIMIT), 2017-2026.
+    Fonte originale: www.rna.gov.it (XML, CC BY 3.0).
+  source: MIMIT — Registro Nazionale Aiuti di Stato
+  source_url: https://www.rna.gov.it/open-data
+  license: CC BY 3.0 (dati) / MIT (codice)
+  frequency: mensile
+
+  coverage:
+    period_start: 2017-01
+    period_end: 2026-03
+    territory: Italia (per regione)
+    granularity: impresa (CF)
+
+  schema:
+    fields:
+      # AIUTO — 17 campi
+      - name: data_concessione
+        type: string
+        description: Data di concessione dell'aiuto (YYYY-MM-DD)
+      - name: car
+        type: string
+        description: Codice identificativo della misura (CAR)
+      - name: cor
+        type: string
+        description: Codice identificativo dell'aiuto (COR)
+      - name: denominazione_beneficiario
+        type: string
+        description: Ragione sociale del beneficiario
+      - name: codice_fiscale_beneficiario
+        type: string
+        description: Codice fiscale / Partita IVA del beneficiario
+      - name: tipo_beneficiario
+        type: string
+        description: Tipologia (PMI, Grande impresa, Persona fisica, ...)
+      - name: regione_beneficiario
+        type: string
+        description: Regione del beneficiario
+      - name: soggetto_concedente
+        type: string
+        description: Ente/istituzione che ha concesso l'aiuto
+      - name: titolo_misura
+        type: string
+        description: Denominazione della misura agevolativa
+      - name: des_tipo_misura
+        type: string
+        description: Tipo di misura (Regime di aiuti, Aiuto ad hoc, ...)
+      - name: titolo_progetto
+        type: string
+        description: Titolo del progetto finanziato
+      - name: descrizione_progetto
+        type: string
+        description: Descrizione del progetto
+      - name: cup
+        type: string
+        description: Codice Unico di Progetto (se presente)
+      - name: atto_concessione
+        type: string
+        description: Atto di concessione
+      - name: base_giuridica_nazionale
+        type: string
+        description: Base giuridica nazionale della misura
+      - name: identificativo_ufficio
+        type: string
+        description: Codice dell'ufficio concedente
+      - name: link_trasparenza_nazionale
+        type: string
+        description: Link ai dettagli pubblici dell'aiuto
+
+      # COMPONENTE — 8 campi
+      - name: id_componente
+        type: string
+        description: Identificativo della componente di aiuto
+      - name: procedimento
+        type: string
+        description: Tipo di procedimento (De Minimis / Notifica / Esenzione)
+      - name: cod_procedimento
+        type: string
+        description: Codice procedimento (1=De Minimis, 2=Notifica, 3=Esenzione)
+      - name: regolamento_ue
+        type: string
+        description: Regolamento UE applicabile
+      - name: cod_regolamento
+        type: string
+        description: Codice del regolamento UE
+      - name: obiettivo
+        type: string
+        description: Obiettivo dell'aiuto
+      - name: cod_obiettivo
+        type: string
+        description: Codice obiettivo
+      - name: settore_attivita
+        type: string
+        description: Settore economico NACE Rev.2 (es. "(NACE 2) J.62.0")
+
+      # STRUMENTO — 4 campi
+      - name: cod_strumento
+        type: string
+        description: Codice strumento (2=Sovvenzione, 7=Prestito, ...)
+      - name: strumento
+        type: string
+        description: Tipo di strumento (Sovvenzione, Prestito, Garanzia, ...)
+      - name: elemento_aiuto
+        type: float
+        description: Importo dell'elemento di aiuto in EUR (ESL)
+      - name: importo_nominale
+        type: float
+        description: Importo nominale dell'operazione in EUR
+
+      # PARTIZIONE — 2 campi
+      - name: anno
+        type: integer
+        description: Anno di concessione (partizione)
+      - name: mese
+        type: integer
+        description: Mese di concessione
+
+    key_fields: [cor, id_componente, cod_strumento]
+
+  metrics:
+    - name: elemento_aiuto
+      description: Importo effettivo dell'aiuto concesso (ESL)
+      unit: EUR
+    - name: importo_nominale
+      description: Valore nominale dell'operazione
+      unit: EUR
+
+  tags:
+    - aiuti di stato
+    - imprese
+    - trasparenza
+    - de minimis
+    - finanziamenti pubblici
+    - HVD

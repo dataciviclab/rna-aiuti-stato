@@ -1,0 +1,13 @@
+# Dati raw (XML) — troppi grandi, solo streaming
+data/raw/*.xml
+
+# Parquet derivati — generati, non in git
+data/derived/
+!data/derived/MANIFEST.json
+
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+.venv/
+.pytest_cache/

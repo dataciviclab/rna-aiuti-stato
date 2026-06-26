@@ -1,0 +1,127 @@
+# RNA Aiuti di Stato — Registro Nazionale Aiuti di Stato
+
+**Ogni aiuto pubblico concesso alle imprese italiane, in formato queryabile.**
+
+Questo progetto estrae i dati del [Registro Nazionale Aiuti di Stato](https://www.rna.gov.it/) (MIMIT) dal formato XML nativo a **Parquet**, zero perdite, zero storage raw intermedio. Dal 2017 a oggi, ogni aiuto concesso con beneficiario, importo, settore e concedente.
+
+## Cosa contiene
+
+| Dimensioni | 2017 (completo) |
+|---|---|
+| File XML sorgente | 12 file, ~3 GB |
+| Parquet finale | **11 MB** (compressione 270:1) |
+| Aiuti | 216.931 |
+| Beneficiari unici | decine di migliaia |
+| Concedenti | Ministeri, Regioni, Camere di Commercio, INPS, INAIL, ... |
+
+### Schema (29 campi)
+
+Una riga = una combinazione **Aiuto × Componente × Strumento**.
+
+```
+data_concessione         # quando
+denominazione_beneficiario  # chi (ragione sociale)
+codice_fiscale_beneficiario # chi (CF/P.IVA)
+regione_beneficiario     # dove
+soggetto_concedente      # chi ha erogato
+titolo_misura            # per cosa (legge/regime)
+elemento_aiuto           # quanto (EUR) — ESL effettivo
+importo_nominale         # quanto (EUR) — valore operazione
+procedimento             # De Minimis / Notifica / Esenzione
+settore_attivita         # NACE Rev.2 (es. J.62.0 software)
+strumento                # Sovvenzione, Prestito, Garanzia, ...
+cup                      # Codice Unico di Progetto
+anno, mese               # partizione
+```
+
+Vedi [dataset.yml](dataset.yml) per lo schema completo.
+
+## Perché è unico
+
+- **Nessuno in Italia** ha questi dati in formato queryabile. Il RNA esiste solo come 133 file XML mensili sul sito del MIMIT.
+- **Traccia ogni euro pubblico** dato alle imprese: dai microprestiti De Minimis alle grandi esenzioni notificate.
+- **Incrociabile** con ANAC (gare), ADE (redditi), MEF (partecipate), ISTAT (popolazione).
+
+## Uso rapido
+
+```bash
+# Installa
+pip install -e "."
+
+# Estrai un anno in streaming (zero storage raw, 3 worker paralleli)
+python3 scripts/full_batch.py --from 2023 --to 2025 --workers 3
+
+# Summary
+python3 scripts/full_batch.py --summary data/derived/rna
+```
+
+### Query esempio
+
+```sql
+-- Quanto aiuto per regione?
+SELECT regione_beneficiario, ROUND(SUM(elemento_aiuto), 0) AS totale
+FROM 'data/derived/rna/rna_*.parquet'
+WHERE anno = 2023
+GROUP BY regione_beneficiario
+ORDER BY totale DESC
+
+-- I 10 maggiori beneficiari
+SELECT denominazione_beneficiario, codice_fiscale_beneficiario,
+       ROUND(SUM(elemento_aiuto), 2) AS totale
+FROM 'data/derived/rna/rna_*.parquet'
+GROUP BY denominazione_beneficiario, codice_fiscale_beneficiario
+ORDER BY totale DESC
+LIMIT 10
+
+-- De Minimis vs notificati per anno
+SELECT anno, procedimento, ROUND(SUM(elemento_aiuto), 0) AS totale
+FROM 'data/derived/rna/rna_*.parquet'
+GROUP BY anno, procedimento
+ORDER BY anno, totale DESC
+
+-- Settori NACE che prendono più aiuti
+SELECT settore_attivita, COUNT(DISTINCT codice_fiscale_beneficiario) AS imprese,
+       ROUND(SUM(elemento_aiuto), 0) AS totale
+FROM 'data/derived/rna/rna_*.parquet'
+WHERE settore_attivita != ''
+GROUP BY settore_attivita
+ORDER BY totale DESC
+```
+
+## Architettura
+
+```
+rna-aiuti-stato/
+├── rna_aiuti/
+│   └── parser.py          ← parsing XML puro (funzioni pure)
+├── scripts/
+│   ├── extract.py          ← file → parquet
+│   └── full_batch.py       ← HTTP streaming → parquet (parallelo)
+├── data/
+│   ├── raw/                ← NON in git (solo cache opzionale)
+│   └── derived/rna/        ← parquet annuali (rna_YYYY.parquet)
+├── dataset.yml             ← catalogo Lab
+├── pyproject.toml
+└── README.md
+```
+
+**Streaming**: il download HTTP e il parsing XML avvengono contemporaneamente — nessun file XML viene mai scritto su disco. `lxml.iterparse` processa un `<AIUTO>` alla volta mentre `urllib` scarica il resto.
+
+**Parallelismo**: i file mensili sono indipendenti → `ThreadPoolExecutor` con 3-4 worker.
+
+**Storage finale**: ~11 MB per anno di parquet (vs ~3 GB di XML sorgente). Compressione media 270:1.
+
+## CI
+
+Il batch completo (133 file, 2017-2026) processa in ~30-45 minuti su un runner GitHub Actions standard e produce ~1.5 GB di parquet. Lo streaming mantiene la memoria sotto i 300 MB.
+
+## Fonti
+
+- **Dati originali**: [RNA — Registro Nazionale Aiuti di Stato](https://www.rna.gov.it/open-data) (MIMIT, CC BY 3.0)
+- **Catalogo**: [dati.gov.it — MIMIT](https://dati.gov.it/opendata/organization/mimit)
+- **Regolamento**: Trasparenza aiuti di Stato (L. 234/2012)
+
+## Licenza
+
+- **Dati**: CC BY 3.0 (MIMIT — Ministero delle Imprese e del Made in Italy)
+- **Codice**: MIT

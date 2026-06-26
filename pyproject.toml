@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rna-aiuti-stato"
+version = "0.1.0"
+description = "Registro Nazionale Aiuti di Stato — XML → Parquet"
+license = {text = "MIT"}
+requires-python = ">=3.11"
+dependencies = [
+    "lxml>=5",
+    "pyarrow>=14",
+    "pandas>=2",
+]
+
+[tool.setuptools.packages.find]
+include = ["rna_aiuti*"]
