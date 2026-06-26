@@ -99,12 +99,19 @@ def main():
     if len(sys.argv) > 2:
         manifest_dir = Path(sys.argv[2])
 
-    parquet_files = sorted(parquet_dir.glob("rna_*.parquet"))
-    if not parquet_files:
-        print("Nessun parquet trovato.")
-        sys.exit(1)
-
     manifest_dir.mkdir(parents=True, exist_ok=True)
+    index_path = manifest_dir / "rna_index.json"
+
+    # Carica index esistente (accumulo tra run CI: ogni run aggiunge un anno)
+    existing_index = {}
+    if index_path.exists():
+        existing_index = json.loads(index_path.read_text(encoding="utf-8"))
+
+    parquet_files = sorted(parquet_dir.glob("rna_*.parquet"))
+
+    # Anni da rimuovere dall'index se i loro parquet non esistono più
+    # (es. dopo un --full che ha ricreato tutto)
+    parquet_years = {int(p.stem.replace("rna_", "")) for p in parquet_files}
 
     year_manifests = []
     for pf in parquet_files:
@@ -118,9 +125,24 @@ def main():
         print(f"  {out_path.name}: {manifest['rows']:,} righe, {manifest['months']} mesi, "
               f"completeness {manifest['completeness']}")
 
+    # Merge con index esistente: mantiene gli anni non presenti nei parquet locali
+    # (utile quando la CI processa un anno alla volta)
+    for y_str, ym in existing_index.get("year_manifests", {}).items():
+        y = int(y_str)
+        if y not in parquet_years and y not in {m["year"] for m in year_manifests}:
+            year_manifests.append({
+                "year": y,
+                "months": ym["months"],
+                "source_available_months": None,  # non serve per index
+                "completeness": ym["completeness"],
+                "rows": ym["rows"],
+                "size_mb": ym["size_mb"],
+                "gcs_uri": ym["gcs_uri"],
+                "parquet": f"rna_{y}.parquet",
+            })
+
     # Scrive indice globale
     index = build_index(year_manifests)
-    index_path = manifest_dir / "rna_index.json"
     index_path.write_text(json.dumps(index, indent=2) + "\n", encoding="utf-8")
     print(f"\n  {index_path.name}: {len(index['years'])} anni, "
           f"{index['total_rows']:,} righe totali, {index['total_size_mb']} MB")
