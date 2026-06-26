@@ -24,7 +24,7 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, rna-arm64]
     permissions:
       contents: write
       id-token: write
@@ -55,10 +55,7 @@ jobs:
           fi
 
       - name: Esegui batch RNA (streaming HTTP, zero storage raw)
-        # Note: RNA.gov.it blocca IP Azure (GitHub Actions).
-        # Se fallisce con timeout, processare da locale:
-        #   python3 scripts/full_batch.py --full --workers 4
-        #   gsutil -m cp data/derived/rna/*.parquet $GCS_BUCKET/
+        # Self-hosted runner su Oracle Cloud Frankfurt (IP non bloccato da RNA.gov.it)
         run: |
           python3 scripts/full_batch.py ${{ steps.years.outputs.range }} \
             --workers ${{ inputs.workers || 4 }} \
