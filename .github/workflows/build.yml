@@ -18,8 +18,11 @@ on:
 env:
   RNA_OUT: data/derived/rna
   GCS_BUCKET: gs://dataciviclab-clean/rna-aiuti-stato
+  # Proxy per fonti che bloccano GitHub Actions (es. RNA.gov.it, ANAC)
+  # VPS Oracle Frankfurt gestita da DataCivicLab
+  HTTPS_PROXY: ${{ vars.BLOCKED_SOURCE_PROXY }}
+  HTTP_PROXY: ${{ vars.BLOCKED_SOURCE_PROXY }}
   # Secret GCP — ereditati dall'organization dataciviclab
-  # Se non configurati, il workflow produce artifact CI
   GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
   GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
 
