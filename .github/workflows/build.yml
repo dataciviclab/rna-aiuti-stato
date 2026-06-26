@@ -86,20 +86,26 @@ jobs:
           path: ${{ env.RNA_OUT }}/*.parquet
           retention-days: 30
 
+      - name: Prepara messaggio commit
+        id: commit-msg
+        run: |
+          MSG=$(python3 -c "
+import json
+m = json.load(open('data/derived/MANIFEST.json'))
+print(f'{len(m[\"years\"])} anni, {m[\"total_rows\"]:,} righe, {m[\"total_size_mb\"]} MB')")
+          echo "message=$MSG" >> "$GITHUB_OUTPUT"
+
       - name: Commit MANIFEST.json aggiornato
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/derived/MANIFEST.json
           if git diff --cached --quiet; then
-            echo "✅ Nessuna modifica al manifest"
+            echo "Nessuna modifica al manifest"
           else
-            git commit -m "Aggiornamento manifest: $(python3 -c "
-import json; m = json.load(open('data/derived/MANIFEST.json'))
-print(f'{len(m[\"years\"])} anni, {m[\"total_rows\"]:,} righe, {m[\"total_size_mb\"]} MB')"
-            )"
+            git commit -m "Aggiornamento manifest: ${{ steps.commit-msg.outputs.message }}"
             git push
-            echo "✅ Manifest committato"
+            echo "Manifest committato"
           fi
 
       - name: Riepilogo
