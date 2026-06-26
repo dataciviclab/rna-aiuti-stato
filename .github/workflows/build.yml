@@ -91,11 +91,7 @@ jobs:
       - name: Prepara messaggio commit
         id: commit-msg
         run: |
-          MSG=$(python3 -c "
-import json
-m = json.load(open('data/derived/manifests/rna_index.json'))
-print(f\"{len(m['years'])} anni, {m['total_rows']:,} righe, {m['total_size_mb']} MB\")
-")
+          MSG=$(python3 -c "import json; m = json.load(open('data/derived/manifests/rna_index.json')); print(f'{len(m[\"years\"])} anni, {m[\"total_rows\"]:,} righe, {m[\"total_size_mb\"]} MB')")
           echo "message=$MSG" >> "$GITHUB_OUTPUT"
 
       - name: Commit manifest aggiornato
@@ -114,15 +110,6 @@ print(f\"{len(m['years'])} anni, {m['total_rows']:,} righe, {m['total_size_mb']}
       - name: Riepilogo
         run: |
           echo "=== STATO FINALE ==="
-          python3 -c "
-import json
-m = json.load(open('data/derived/manifests/rna_index.json'))
-print(f'Anni: {m[\"years\"]}')
-print(f'Righe totali: {m[\"total_rows\"]:,}')
-print(f'Dimensione: {m[\"total_size_mb\"]} MB')
-for y in sorted(m['year_manifests']):
-    ym = m['year_manifests'][y]
-    print(f'  {y}: {ym[\"rows\"]:,} righe, {ym[\"months\"]} mesi, completeness {ym[\"completeness\"]}')
-print(f'Ultimo aggiornamento: {m[\"updated_at\"]}')
-"
+          cat data/derived/manifests/rna_index.json
+          echo ""
           echo "GCS: ${{ env.GCS_BUCKET }}"
