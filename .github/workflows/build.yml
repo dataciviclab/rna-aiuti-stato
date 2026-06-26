@@ -30,9 +30,9 @@ jobs:
       contents: write
       id-token: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: pip
@@ -80,7 +80,7 @@ jobs:
 
       - name: Carica parquet come artifact CI (fallback)
         if: steps.gcp-auth.outcome != 'success'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: rna-parquet
           path: ${{ env.RNA_OUT }}/*.parquet

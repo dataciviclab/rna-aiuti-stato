@@ -14,5 +14,8 @@ dependencies = [
     "pandas>=2",
 ]
 
+[project.optional-dependencies]
+dev = ["pytest"]
+
 [tool.setuptools.packages.find]
 include = ["rna_aiuti*"]
