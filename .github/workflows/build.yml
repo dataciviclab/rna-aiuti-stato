@@ -64,26 +64,24 @@ jobs:
       - name: Genera MANIFEST.json
         run: python3 scripts/generate_manifest.py "$RNA_OUT"
 
-      - name: Autenticazione GCP (se configurata)
+      - name: Autenticazione GCP con SA key
         id: gcp-auth
-        if: env.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != ''
-        uses: google-github-actions/auth@v3
-        with:
-          workload_identity_provider: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
-
-      - name: Setup gcloud
-        if: steps.gcp-auth.outcome == 'success'
-        uses: google-github-actions/setup-gcloud@v3
+        if: env.GCP_SA_KEY_RNA != ''
+        run: |
+          printf '%s\n' "$GCP_SA_KEY_RNA" > /tmp/gcp-key.json
+          gcloud auth activate-service-account --key-file=/tmp/gcp-key.json
+          echo "gcp_ready=true" >> "$GITHUB_OUTPUT"
+        env:
+          GCP_SA_KEY_RNA: ${{ secrets.GCP_SA_KEY_RNA }}
 
       - name: Pusha parquet a GCS
-        if: steps.gcp-auth.outcome == 'success'
+        if: steps.gcp-auth.outputs.gcp_ready == 'true'
         run: |
           gsutil -m cp "$RNA_OUT"/*.parquet "$GCS_BUCKET/"
           echo "✅ Parquet pushati a $GCS_BUCKET"
 
       - name: Carica parquet come artifact CI (fallback)
-        if: steps.gcp-auth.outcome != 'success'
+        if: steps.gcp-auth.outputs.gcp_ready != 'true'
         uses: actions/upload-artifact@v7
         with:
           name: rna-parquet
