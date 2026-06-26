@@ -1,8 +1,8 @@
 # Dati raw (XML) — troppi grandi, solo streaming
 data/raw/*.xml
 
-# Parquet derivati — generati, non in git
-data/derived/
+# Parquet derivati — generati, non in git (eccetto MANIFEST.json)
+data/derived/*
 !data/derived/MANIFEST.json
 
 # Python
