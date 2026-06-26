@@ -1,9 +1,10 @@
 # Dati raw (XML) — troppi grandi, solo streaming
 data/raw/*.xml
 
-# Parquet derivati — generati, non in git (eccetto MANIFEST.json)
+# Parquet derivati — generati, non in git (eccetto manifest)
 data/derived/*
 !data/derived/MANIFEST.json
+!data/derived/manifests/*.json
 
 # Python
 __pycache__/
