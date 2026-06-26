@@ -1,23 +1,23 @@
 {
   "dataset": "rna_aiuti_stato",
   "description": "Registro Nazionale Aiuti di Stato \u2014 ogni aiuto pubblico concesso alle imprese italiane",
-  "updated_at": "2026-06-26T13:46:21Z",
+  "updated_at": "2026-06-26T16:47:39Z",
   "source_url": "https://www.rna.gov.it/open-data",
   "license": "CC BY 3.0",
   "gcs_prefix": "gs://dataciviclab-clean/rna-aiuti-stato/",
   "years": [
-    2018
+    2017
   ],
   "files": {
-    "rna_2018.parquet": {
-      "rows": 696534,
-      "size_mb": 52.9,
-      "gcs_uri": "gs://dataciviclab-clean/rna-aiuti-stato/rna_2018.parquet",
+    "rna_2017.parquet": {
+      "rows": 216931,
+      "size_mb": 11.1,
+      "gcs_uri": "gs://dataciviclab-clean/rna-aiuti-stato/rna_2017.parquet",
       "months": null
     }
   },
-  "total_rows": 696534,
-  "total_size_mb": 52.9,
+  "total_rows": 216931,
+  "total_size_mb": 11.1,
   "build_info": {
     "parser_version": "0.1.0",
     "schema_fields": 29,
