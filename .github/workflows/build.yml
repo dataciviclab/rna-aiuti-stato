@@ -10,7 +10,7 @@ on:
       workers:
         description: 'Worker paralleli'
         required: false
-        default: "4"
+        default: "2"
   schedule:
     # Mensile: aggiorna al 5 del mese
     - cron: "0 6 5 * *"
@@ -58,7 +58,7 @@ jobs:
         # Self-hosted runner su Oracle Cloud Frankfurt (IP non bloccato da RNA.gov.it)
         run: |
           python3 scripts/full_batch.py ${{ steps.years.outputs.range }} \
-            --workers ${{ inputs.workers || 4 }} \
+            --workers ${{ inputs.workers || '2' }} \
             -o "$RNA_OUT"
 
       - name: Genera MANIFEST.json
