@@ -211,6 +211,20 @@ def main():
     total_mb = sum(f.stat().st_size for f in out_dir.glob("rna_*.parquet")) / 1_000_000
     logger.info("  Output: %s (%.0f MB)", out_dir, total_mb)
 
+    # Aggiorna manifest annuali
+    logger.info("")
+    logger.info("Generazione manifest ...")
+    import subprocess
+    ret = subprocess.run(
+        [sys.executable, "scripts/generate_manifest.py", str(out_dir)],
+        capture_output=True, text=True,
+    )
+    for line in ret.stdout.strip().split("\n"):
+        if line.strip():
+            logger.info("  %s", line)
+    if ret.returncode != 0:
+        logger.error("  generate_manifest fallito: %s", ret.stderr[:500])
+
 
 if __name__ == "__main__":
     main()

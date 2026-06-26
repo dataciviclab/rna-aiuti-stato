@@ -91,16 +91,16 @@ jobs:
       - name: Prepara messaggio commit
         id: commit-msg
         run: |
-          MSG=$(python3 -c "import json; m = json.load(open('data/derived/MANIFEST.json')); print(f'{len(m[\"years\"])} anni, {m[\"total_rows\"]:,} righe, {m[\"total_size_mb\"]} MB')")
+          MSG=$(python3 -c "import json; m = json.load(open('data/derived/manifests/rna_index.json')); print(f'{len(m[\"years\"])} anni, {m[\"total_rows\"]:,} righe, {m[\"total_size_mb\"]} MB')")
           echo "message=$MSG" >> "$GITHUB_OUTPUT"
 
-      - name: Commit MANIFEST.json aggiornato
+      - name: Commit manifest aggiornato
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/derived/MANIFEST.json
+          git add data/derived/manifests/
           if git diff --cached --quiet; then
-            echo "Nessuna modifica al manifest"
+            echo "Nessuna modifica ai manifest"
           else
             git commit -m "Aggiornamento manifest: ${{ steps.commit-msg.outputs.message }}"
             git push
@@ -110,12 +110,6 @@ jobs:
       - name: Riepilogo
         run: |
           echo "=== STATO FINALE ==="
-          python3 -c "
-          import json
-          m = json.load(open('data/derived/MANIFEST.json'))
-          print(f'Anni: {m[\"years\"]}')
-          print(f'Righe totali: {m[\"total_rows\"]:,}')
-          print(f'Dimensione: {m[\"total_size_mb\"]} MB')
-          print(f'Ultimo aggiornamento: {m[\"updated_at\"]}')
-          "
+          cat data/derived/manifests/rna_index.json
+          echo ""
           echo "GCS: ${{ env.GCS_BUCKET }}"
