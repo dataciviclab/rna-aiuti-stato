@@ -166,6 +166,62 @@ def flatten_aiuto(aiuto_elem: Any) -> list[dict[str, Any]]:
 
 
 # ---------------------------------------------------------------------------
+# Misure RNA (OpenData_Misura_*.xml)
+# ---------------------------------------------------------------------------
+
+MISURA_NS = "{http://www.rna.it/RNA_misura/schema}"
+
+
+def _misura_text(elem, tag: str) -> str:
+    """Testo di un figlio diretto di una Misura (namespace RNA misura)."""
+    child = elem.find(f"{MISURA_NS}{tag}")
+    if child is None or child.text is None:
+        return ""
+    return " ".join(child.text.split())
+
+
+def _misura_float(elem, tag: str) -> float | None:
+    raw = _misura_text(elem, tag)
+    if not raw:
+        return None
+    try:
+        return float(raw.replace(",", "."))
+    except (ValueError, TypeError):
+        return None
+
+
+def extract_misura(misura_elem) -> dict:
+    """Campi da un <MISURA>. Una misura = una riga."""
+    anno, mese = 0, 0
+    data_inizio = _misura_text(misura_elem, "DATA_INIZIO_MISURA")
+    if data_inizio:
+        anno, mese = parse_year_month(data_inizio[:10])
+
+    return {
+        "car": _misura_text(misura_elem, "CAR"),
+        "car_padre": _misura_text(misura_elem, "CAR_PADRE"),
+        "car_attivo": _misura_text(misura_elem, "CAR_ATTIVO"),
+        "titolo_misura": _misura_text(misura_elem, "TITOLO_MISURA"),
+        "des_tipo_misura": _misura_text(misura_elem, "DES_TIPO_MISURA"),
+        "cod_tipo_misura": _misura_text(misura_elem, "COD_TIPO_MISURA"),
+        "data_inizio_misura": data_inizio,
+        "data_fine_misura": _misura_text(misura_elem, "DATA_FINE_MISURA"),
+        "base_giuridica_nazionale": _misura_text(misura_elem, "BASE_GIURIDICA_NAZIONALE"),
+        "stato_membro": _misura_text(misura_elem, "STATO_MEMBRO"),
+        "cod_amm": _misura_text(misura_elem, "COD_AMM"),
+        "des_autorita": _misura_text(misura_elem, "DES_AUTORITA"),
+        "autorita_concedente": _misura_text(misura_elem, "AUTORITA_CONCEDENTE_TRASP_CE"),
+        "importo_prestiti_garantiti": _misura_float(misura_elem, "IMPORTO_PRESTITI_GARANTITI"),
+        "importo_aiuto_ad_hoc": _misura_float(misura_elem, "IMPORTO_AIUTO_AD_HOC"),
+        "link_aiuto": _misura_text(misura_elem, "LINK_AIUTO"),
+        "flag_quadro": _misura_text(misura_elem, "FLAG_QUADRO"),
+        "flag_modifica_regime": _misura_text(misura_elem, "FLAG_MODIFICA_REGIME_O_ESISTENTE"),
+        "anno": anno,
+        "mese": mese,
+    }
+
+
+# ---------------------------------------------------------------------------
 # Schema dati — single source of truth per colonne e tipi
 # ---------------------------------------------------------------------------
 # Allineato con dataset.yml. Se aggiungi/cambi un campo, aggiorna QUI
@@ -213,6 +269,31 @@ FIELD_NAMES: list[str] = [f.name for f in SCHEMA]
 
 DEDUP_KEY = ("cor", "id_componente", "cod_strumento")
 
+# Schema Misure RNA
+MISURA_SCHEMA = pa.schema([
+    pa.field("car", pa.string()),
+    pa.field("car_padre", pa.string()),
+    pa.field("car_attivo", pa.string()),
+    pa.field("titolo_misura", pa.string()),
+    pa.field("des_tipo_misura", pa.string()),
+    pa.field("cod_tipo_misura", pa.string()),
+    pa.field("data_inizio_misura", pa.string()),
+    pa.field("data_fine_misura", pa.string()),
+    pa.field("base_giuridica_nazionale", pa.string()),
+    pa.field("stato_membro", pa.string()),
+    pa.field("cod_amm", pa.string()),
+    pa.field("des_autorita", pa.string()),
+    pa.field("autorita_concedente", pa.string()),
+    pa.field("importo_prestiti_garantiti", pa.float64()),
+    pa.field("importo_aiuto_ad_hoc", pa.float64()),
+    pa.field("link_aiuto", pa.string()),
+    pa.field("flag_quadro", pa.string()),
+    pa.field("flag_modifica_regime", pa.string()),
+    pa.field("anno", pa.int32()),
+    pa.field("mese", pa.int32()),
+])
+MISURA_FIELD_NAMES: list[str] = [f.name for f in MISURA_SCHEMA]
+
 
 # ---------------------------------------------------------------------------
 # Utility
@@ -236,13 +317,21 @@ def parse_year_month(data_concessione: str) -> tuple[int, int]:
         return 0, 0
 
 
-def _to_table(rows: list[dict]) -> pa.Table:
-    """Converte una lista di dict in tabella PyArrow secondo SCHEMA."""
-    batch: dict[str, list] = {f: [] for f in FIELD_NAMES}
+def _to_table(rows: list[dict], schema: pa.Schema | None = None) -> pa.Table:
+    """Converte una lista di dict in tabella PyArrow.
+
+    Args:
+        rows: Lista di dict con campi allineati allo schema.
+        schema: Schema PyArrow da usare. Default SCHEMA (Aiuti).
+    """
+    if schema is None:
+        schema = SCHEMA
+    field_names = [f.name for f in schema]
+    batch: dict[str, list] = {f: [] for f in field_names}
     for row in rows:
-        for field in FIELD_NAMES:
+        for field in field_names:
             batch[field].append(row.get(field))
-    return pa.Table.from_pydict(batch, schema=SCHEMA)
+    return pa.Table.from_pydict(batch, schema=schema)
 
 
 # ---------------------------------------------------------------------------
@@ -369,6 +458,7 @@ def write_partition(
     year: int,
     mode: str = "overwrite",
     dedup: bool = True,
+    prefix: str = "rna",
 ) -> Path:
     """Scrive righe in un parquet annuale.
 
@@ -386,7 +476,7 @@ def write_partition(
         Path del parquet scritto.
     """
     base_dir = Path(base_dir)
-    out_path = base_dir / f"rna_{year}.parquet"
+    out_path = base_dir / f"{prefix}_{year}.parquet"
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
     new_table = _to_table(rows)
@@ -440,6 +530,68 @@ def _dedup_table(table: pa.Table) -> pa.Table:
     if n_after < n_before:
         logger.info("    dedup: %d → %d righe", n_before, n_after)
     return pa.Table.from_pandas(df, schema=SCHEMA)
+
+
+def write_partition(
+    rows: list[dict],
+    base_dir: str | Path,
+    year: int,
+    mode: str = "overwrite",
+    dedup: bool = True,
+    prefix: str = "rna",
+    schema: pa.Schema | None = None,
+) -> Path:
+    """Scrive righe in un parquet annuale.
+
+    Args:
+        rows: Lista di dict con i campi allineati allo schema.
+        base_dir: Directory dei parquet annuali.
+        year: Anno (2000-2099).
+        mode: ``"overwrite"`` (default) sostituisce il file se esiste;
+              ``"append"`` concatena al file esistente.
+        dedup: Se True (default) e mode='overwrite', scarta righe con
+               ``(cor, id_componente, cod_strumento)`` duplicate (tiene
+               l'ultima occorrenza).
+        prefix: Prefisso del nome file (es. "rna" → rna_2024.parquet).
+        schema: Schema PyArrow da usare. Default SCHEMA (Aiuti).
+
+    Returns:
+        Path del parquet scritto.
+    """
+    if schema is None:
+        schema = SCHEMA
+
+    base_dir = Path(base_dir)
+    base_dir.mkdir(parents=True, exist_ok=True)
+    out_path = base_dir / f"{prefix}_{year}.parquet"
+
+    new_table = _to_table(rows, schema=schema)
+    n_new = new_table.num_rows
+
+    if mode == "overwrite":
+        if dedup:
+            new_table = _dedup_table(new_table)
+        pq.write_table(new_table, str(out_path), compression="zstd")
+        logger.info("  → %s: %d righe (scritto)", out_path.name, new_table.num_rows)
+    elif mode == "append":
+        if out_path.exists():
+            old_table = pq.read_table(str(out_path))
+            n_old = old_table.num_rows
+            combined = pa.concat_tables([old_table, new_table])
+            if dedup:
+                combined = _dedup_table(combined)
+            pq.write_table(combined, str(out_path), compression="zstd")
+            logger.info("  → %s: %d righe (old %d + new %d → %d)",
+                        out_path.name, combined.num_rows, n_old, n_new, combined.num_rows)
+        else:
+            if dedup:
+                new_table = _dedup_table(new_table)
+            pq.write_table(new_table, str(out_path), compression="zstd")
+            logger.info("  → %s: %d righe (nuovo)", out_path.name, new_table.num_rows)
+    else:
+        raise ValueError(f"mode deve essere 'overwrite' o 'append', non {mode!r}")
+
+    return out_path
 
 
 def extract_streaming(
