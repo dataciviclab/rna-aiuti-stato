@@ -61,7 +61,6 @@ def _download_with_retry(url: str) -> object:
             req = urllib.request.Request(url, headers={
                 "User-Agent": USER_AGENT,
                 "Accept": "application/xml, text/xml, */*",
-                "Accept-Encoding": "gzip, deflate",
             })
             return urllib.request.urlopen(req, timeout=600)
         except (urllib.error.URLError, OSError) as e:
