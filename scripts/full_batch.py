@@ -119,7 +119,8 @@ def process_url(url: str) -> dict:
     rows_by_year: dict[int, list] = {}
     total_aiuti = 0
 
-    context = ET.iterparse(resp, events=("end",), tag=TAG_AIUTO)
+    context = ET.iterparse(resp, events=("end",), tag=TAG_AIUTO,
+                           parser=ET.XMLParser(recover=True))
     for _event, elem in context:
         total_aiuti += 1
         flat_rows = flatten_aiuto(elem)
@@ -158,8 +159,8 @@ def main():
                         help="Anno iniziale (default: 2017)")
     parser.add_argument("--to", dest="to_year", type=int, default=2026,
                         help="Anno finale (default: 2026)")
-    parser.add_argument("--workers", type=int, default=3,
-                        help="Worker paralleli (default: 3, attento al rate-limit)")
+    parser.add_argument("--workers", type=int, default=2,
+                        help="Worker paralleli (default: 2, VM 6GB RAM)")
     parser.add_argument("--full", action="store_true",
                         help="Processa tutti i 133 file (override --from/--to)")
     parser.add_argument("-o", "--out", type=str, default="data/derived/rna",
