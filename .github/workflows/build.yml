@@ -89,10 +89,7 @@ jobs:
       - name: Prepara messaggio commit
         id: commit-msg
         run: |
-          MSG=$(python3 -c "
-import json
-m = json.load(open('data/derived/MANIFEST.json'))
-print(f'{len(m[\"years\"])} anni, {m[\"total_rows\"]:,} righe, {m[\"total_size_mb\"]} MB')")
+          MSG=$(python3 -c "import json; m = json.load(open('data/derived/MANIFEST.json')); print(f'{len(m[\"years\"])} anni, {m[\"total_rows\"]:,} righe, {m[\"total_size_mb\"]} MB')")
           echo "message=$MSG" >> "$GITHUB_OUTPUT"
 
       - name: Commit MANIFEST.json aggiornato
