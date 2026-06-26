@@ -1,0 +1,116 @@
+name: build
+
+on:
+  workflow_dispatch:
+    inputs:
+      years:
+        description: 'Anni da processare (es. "2023-2025" o "full")'
+        required: false
+        default: "full"
+      workers:
+        description: 'Worker paralleli'
+        required: false
+        default: "4"
+  schedule:
+    # Mensile: aggiorna al 5 del mese
+    - cron: "0 6 5 * *"
+
+env:
+  RNA_OUT: data/derived/rna
+  GCS_BUCKET: gs://dataciviclab-clean/rna-aiuti-stato
+  # Secret GCP — ereditati dall'organization dataciviclab
+  # Se non configurati, il workflow produce artifact CI
+  GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+  GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Installa dipendenze
+        run: pip install -e "."
+
+      - name: Configura anni
+        id: years
+        run: |
+          if [[ "${{ inputs.years }}" == "full" || "${{ inputs.years }}" == "" ]]; then
+            echo "range=--full" >> "$GITHUB_OUTPUT"
+          else
+            # Formato "2023-2025"
+            IFS='-' read -r from to <<< "${{ inputs.years }}"
+            echo "range=--from $from --to $to" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Esegui batch RNA (streaming HTTP, zero storage raw)
+        run: |
+          python3 scripts/full_batch.py ${{ steps.years.outputs.range }} \
+            --workers ${{ inputs.workers || 4 }} \
+            -o "$RNA_OUT"
+
+      - name: Genera MANIFEST.json
+        run: python3 scripts/generate_manifest.py "$RNA_OUT"
+
+      - name: Autenticazione GCP (se configurata)
+        id: gcp-auth
+        if: env.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != ''
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+
+      - name: Setup gcloud
+        if: steps.gcp-auth.outcome == 'success'
+        uses: google-github-actions/setup-gcloud@v3
+
+      - name: Pusha parquet a GCS
+        if: steps.gcp-auth.outcome == 'success'
+        run: |
+          gsutil -m cp "$RNA_OUT"/*.parquet "$GCS_BUCKET/"
+          echo "✅ Parquet pushati a $GCS_BUCKET"
+
+      - name: Carica parquet come artifact CI (fallback)
+        if: steps.gcp-auth.outcome != 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: rna-parquet
+          path: ${{ env.RNA_OUT }}/*.parquet
+          retention-days: 30
+
+      - name: Commit MANIFEST.json aggiornato
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/derived/MANIFEST.json
+          if git diff --cached --quiet; then
+            echo "✅ Nessuna modifica al manifest"
+          else
+            git commit -m "Aggiornamento manifest: $(python3 -c "
+import json; m = json.load(open('data/derived/MANIFEST.json'))
+print(f'{len(m[\"years\"])} anni, {m[\"total_rows\"]:,} righe, {m[\"total_size_mb\"]} MB')"
+            )"
+            git push
+            echo "✅ Manifest committato"
+          fi
+
+      - name: Riepilogo
+        run: |
+          echo "=== STATO FINALE ==="
+          python3 -c "
+          import json
+          m = json.load(open('data/derived/MANIFEST.json'))
+          print(f'Anni: {m[\"years\"]}')
+          print(f'Righe totali: {m[\"total_rows\"]:,}')
+          print(f'Dimensione: {m[\"total_size_mb\"]} MB')
+          print(f'Ultimo aggiornamento: {m[\"updated_at\"]}')
+          "
+          echo "GCS: ${{ env.GCS_BUCKET }}"
