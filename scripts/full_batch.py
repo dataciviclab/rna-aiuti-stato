@@ -132,8 +132,8 @@ def main():
                         help="Anno iniziale (default: 2017)")
     parser.add_argument("--to", dest="to_year", type=int, default=2026,
                         help="Anno finale (default: 2026)")
-    parser.add_argument("--workers", type=int, default=2,
-                        help="Worker paralleli (default: 2, VM 6GB RAM)")
+    parser.add_argument("--workers", type=int, default=4,
+                        help="Worker paralleli (default: 4, picco RAM < 500 MB)")
     parser.add_argument("--full", action="store_true",
                         help="Processa tutti i 133 file (override --from/--to)")
     parser.add_argument("-o", "--out", type=str, default="data/derived/rna",
@@ -166,9 +166,9 @@ def main():
     logger.info("")
 
     t_start = time.time()
-    years_data: dict[int, list] = {}
     done = 0
     failed = 0
+    total_rows = 0
 
     with ThreadPoolExecutor(max_workers=args.workers) as executor:
         futmap = {executor.submit(process_url, u): u for u in urls}
@@ -179,22 +179,15 @@ def main():
             try:
                 result = fut.result()
                 for y, rows in result.items():
-                    years_data.setdefault(y, []).extend(rows)
+                    if y == 0:
+                        continue
+                    # Scrive SUBITO per file — niente accumulo in RAM
+                    write_partition(rows, out_dir, y, mode="overwrite", dedup=False)
+                    total_rows += len(rows)
                 done += 1
             except Exception as e:
                 logger.error("  ✗ %s: %s", fname, e)
                 failed += 1
-
-    # Scrive partizioni annuali (sovrascrive con dedup)
-    logger.info("")
-    logger.info("Scrittura partizioni per anno ...")
-    total_rows = 0
-    for year in sorted(years_data):
-        rows = years_data[year]
-        if not rows or year == 0:
-            continue
-        write_partition(rows, out_dir, year, mode="overwrite", dedup=True)
-        total_rows += len(rows)
 
     elapsed = time.time() - t_start
     logger.info("")

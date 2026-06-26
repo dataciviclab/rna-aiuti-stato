@@ -10,7 +10,7 @@ on:
       workers:
         description: 'Worker paralleli'
         required: false
-        default: "2"
+        default: "4"
   schedule:
     # Mensile: aggiorna al 5 del mese
     - cron: "0 6 5 * *"
