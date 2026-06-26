@@ -283,6 +283,43 @@ def test_xml_char_filter_and_tag_fixer_chain():
     assert b"BASE_GIURIDICA_NAZIONALE" in result
 
 
+def test_tag_fixer_preserves_valid_base_giuridica_nazionale():
+    """BASE_GIURIDICA_NAZIONALE già corretto NON viene corrotto (regressione)."""
+    xml = b"<AIUTO><BASE_GIURIDICA_NAZIONALE>Legge valida</BASE_GIURIDICA_NAZIONALE></AIUTO>"
+    f = XMLTagFixer(io.BytesIO(xml))
+    result = f.read()
+    # Se il fix corrompesse, avremmo BASE_GIURIDICA_NAZIONALEIONALE
+    assert b"BASE_GIURIDICA_NAZIONALEIONALE" not in result
+    assert b"<BASE_GIURIDICA_NAZIONALE>" in result
+    assert b"</BASE_GIURIDICA_NAZIONALE>" in result
+
+
+def test_tag_fixer_preserves_valid_importo_nominale():
+    """IMPORTO_NOMINALE già corretto NON viene corrotto (regressione)."""
+    xml = b"<AIUTO><IMPORTO_NOMINALE>123.45</IMPORTO_NOMINALE></AIUTO>"
+    f = XMLTagFixer(io.BytesIO(xml))
+    result = f.read()
+    # Se il fix corrompesse, avremmo IMPORTO_NOMINALEALE
+    assert b"IMPORTO_NOMINALEALE" not in result
+    assert b"<IMPORTO_NOMINALE>" in result
+    assert b"</IMPORTO_NOMINALE>" in result
+
+
+def test_tag_fixer_preserves_valid_and_fixes_truncated():
+    """Tag già corretti e tag troncati coesistono senza danni."""
+    xml = (
+        b"<AIUTO>"
+        b"<BASE_GIURIDICA_NAZIONALE>Legge valida</BASE_GIURIDICA_NAZIONALE>"
+        b"<IMPORTO_NOMIN>123.45</IMPORTO_NOMIN>"
+        b"</AIUTO>"
+    )
+    f = XMLTagFixer(io.BytesIO(xml))
+    result = f.read()
+    assert b"BASE_GIURIDICA_NAZIONALEIONALE" not in result
+    assert b"<BASE_GIURIDICA_NAZIONALE>" in result
+    assert b"<IMPORTO_NOMINALE>" in result
+
+
 # ---------------------------------------------------------------------------
 # I/O Parquet
 # ---------------------------------------------------------------------------

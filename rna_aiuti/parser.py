@@ -10,6 +10,7 @@ Modulo centrale del pacchetto ``rna_aiuti``. Contiene:
 from __future__ import annotations
 
 import logging
+import re
 from pathlib import Path
 from typing import Any
 
@@ -293,14 +294,23 @@ class XMLTagFixer:
     Alcuni file XML di RNA.gov.it hanno tag troncati (es. ``BASE_GIURIDICA_NAZ``
     invece di ``BASE_GIURIDICA_NAZIONALE``). Il filtro bufferizza fino al
     prossimo ``>`` (fine tag XML) per non tagliare mai a metà un nome di tag,
-    poi applica le correzioni note.
+    poi applica le correzioni con regex a contesto (negative lookahead):
+    un nome troncato matcha solo se non è parte di un nome più lungo.
+
+    Esempio: ``BASE_GIURIDICA_NAZ`` matcha (seguito da ``>``, spazio o ``/``),
+    ma ``BASE_GIURIDICA_NAZIONALE`` NON matcha (seguito da ``IO...``).
     """
 
-    _FIXES = (
-        (b"BASE_GIURIDICA_NAZ", b"BASE_GIURIDICA_NAZIONALE"),
-        (b"IMPORTO_NOMIN", b"IMPORTO_NOMINALE"),
+    # Pattern regex con negative lookahead: matcha solo se il nome troncato
+    # NON è seguito da caratteri validi in un nome di tag ([A-Z_]).
+    # Esempio:
+    #   "<BASE_GIURIDICA_NAZ>"  → corretto  (seguito da >)
+    #   "<IMPORTO_NOMINALE>"    → NON matcha (seguito da ALE)
+    _PATTERNS = (
+        (re.compile(rb"BASE_GIURIDICA_NAZ(?![A-Z_])"), b"BASE_GIURIDICA_NAZIONALE"),
+        (re.compile(rb"IMPORTO_NOMIN(?![A-Z_])"), b"IMPORTO_NOMINALE"),
     )
-    _MAX_FIX = max(len(w) for w, _ in _FIXES)
+    _MAX_FIX = max(len(p.pattern) for p, _ in _PATTERNS)
 
     def __init__(self, stream):
         self._stream = stream
@@ -334,8 +344,8 @@ class XMLTagFixer:
                 data = self._buf
                 self._buf = b""
 
-        for wrong, correct in self._FIXES:
-            data = data.replace(wrong, correct)
+        for pattern, replacement in self._PATTERNS:
+            data = pattern.sub(replacement, data)
         return data
 
     def readinto(self, b: bytearray) -> int:
