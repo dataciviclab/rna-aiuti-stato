@@ -165,6 +165,15 @@ def main():
     logger.info("Output: %s", out_dir)
     logger.info("")
 
+    # Pulisce parquet esistenti per gli anni target (ogni run ricostruisce
+    # da zero gli anni richiesti — niente accumulo tra run)
+    if args.full:
+        for f in out_dir.glob("rna_*.parquet"):
+            f.unlink()
+    else:
+        for y in range(args.from_year, args.to_year + 1):
+            (out_dir / f"rna_{y}.parquet").unlink(missing_ok=True)
+
     t_start = time.time()
     done = 0
     failed = 0
@@ -181,8 +190,10 @@ def main():
                 for y, rows in result.items():
                     if y == 0:
                         continue
-                    # Scrive SUBITO per file — niente accumulo in RAM
-                    write_partition(rows, out_dir, y, mode="overwrite", dedup=False)
+                    # Appende SUBITO per file — niente accumulo in RAM.
+                    # Ogni run parte da parquet puliti (cleanup sopra),
+                    # quindi i mesi si accumulano senza duplicati.
+                    write_partition(rows, out_dir, y, mode="append", dedup=False)
                     total_rows += len(rows)
                 done += 1
             except Exception as e:

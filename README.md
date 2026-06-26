@@ -53,10 +53,10 @@ pip install -e ".[dev]"
 # Summary dei parquet già processati
 python3 scripts/full_batch.py --summary
 
-# Estrai un periodo in streaming parallelo
-python3 scripts/full_batch.py --from 2023 --to 2025 --workers 2
+# Estrai un periodo in streaming parallelo (4 worker, RAM < 500 MB)
+python3 scripts/full_batch.py --from 2023 --to 2025
 
-# Full (tutti i 133 file, ~30-45 min)
+# Full (tutti i 114 file, ~3 ore con 4 worker)
 python3 scripts/full_batch.py --full
 ```
 
@@ -116,17 +116,19 @@ rna-aiuti-stato/
 
 **Streaming**: il download HTTP e il parsing XML avvengono contemporaneamente — nessun file XML viene mai scritto su disco. `lxml.iterparse` processa un `<AIUTO>` alla volta mentre `urllib` scarica il resto.
 
-**Parallelismo**: i file mensili sono indipendenti → `ThreadPoolExecutor` con 2 worker (limite per VM 6GB RAM).
+**Parallelismo**: i file mensili sono indipendenti → `ThreadPoolExecutor` con 4 worker. La memoria non accumula dati: ogni file viene scritto subito su disco (append per anno), il picco RAM è sotto 500 MB anche con 4 worker paralleli.
 
-**Storage finale**: ~11 MB per anno di parquet (vs ~3 GB di XML sorgente). Compressione media 270:1.
+**Storage finale**: ~50 MB per anno di parquet (vs ~5-10 GB di XML sorgente). Compressione media 100:1-200:1.
 
-**Dedup automatico**: a ogni scrittura (sia overwrite che append), le righe duplicate per chiave `(cor, id_componente, cod_strumento)` vengono deduplicate. I dati rimangono puliti anche dopo esecuzioni multiple della CI.
+**Scrittura incrementale**: a ogni run, i parquet degli anni richiesti vengono ricreati da zero (cleanup iniziale + append per mese). Niente accumulo tra run, niente dedup (i dati RNA non hanno duplicati).
 
 **Robustezza**: due filtri in cascata sullo stream XML — `XMLCharFilter` rimuove byte XML non validi, `XMLTagFixer` corregge tag troncati nei file della fonte (BASE_GIURIDICA_NAZ → BASE_GIURIDICA_NAZIONALE, IMPORTO_NOMIN → IMPORTO_NOMINALE).
 
 ## CI
 
-Il batch completo (133 file, 2017-2026) processa in ~30-45 minuti su un runner self-hosted (Oracle Cloud, ARM64, 6GB RAM). Lo streaming mantiene la memoria sotto i 300 MB per worker.
+Il batch completo (114 file, 2017-2026, ~40 GB di XML) processa in ~3 ore su un runner self-hosted (Oracle Cloud, ARM64, 6GB RAM). Ogni file viene scritto subito su disco — picco RAM sotto 500 MB anche con 4 worker paralleli.
+
+Per l'aggiornamento mensile si processano solo i mesi nuovi (1-3 file, ~3-8 minuti).
 
 ### Workflow `test`
 Attivato su push/PR: installa il pacchetto, esegue i test. CI bloccante.
