@@ -46,9 +46,13 @@ jobs:
           if [[ "${{ inputs.years }}" == "full" || "${{ inputs.years }}" == "" ]]; then
             echo "range=--full" >> "$GITHUB_OUTPUT"
           else
-            # Formato "2023-2025"
+            # Formato "2023-2025" o "2025" (anno singolo)
             IFS='-' read -r from to <<< "${{ inputs.years }}"
-            echo "range=--from $from --to $to" >> "$GITHUB_OUTPUT"
+            if [[ -z "$to" ]]; then
+              echo "range=--from $from --to $from" >> "$GITHUB_OUTPUT"
+            else
+              echo "range=--from $from --to $to" >> "$GITHUB_OUTPUT"
+            fi
           fi
 
       - name: Esegui batch RNA (streaming HTTP, zero storage raw)
