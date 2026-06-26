@@ -52,8 +52,40 @@ RNA_URLS = [
 ]
 
 
+class _XMLCharFilter:
+    """Wrapper file-like che filtra caratteri XML non validi dallo stream."""
+    _ALLOWED = frozenset({0x09, 0x0A, 0x0D})
+
+    def __init__(self, stream):
+        self.stream = stream
+        self._buf = b""
+
+    def read(self, n: int = -1) -> bytes:
+        if n == -1:
+            data = self.stream.read()
+        else:
+            if len(self._buf) >= n:
+                data = self._buf[:n]
+                self._buf = self._buf[n:]
+                return data
+            data = self._buf + self.stream.read(n - len(self._buf))
+            self._buf = b""
+        if isinstance(data, bytes):
+            return bytes(b for b in data if b >= 0x20 or b in self._ALLOWED)
+        return data
+
+    def readinto(self, b: bytearray) -> int:
+        data = self.read(len(b))
+        n = len(data)
+        b[:n] = data
+        return n
+
+    def close(self):
+        self.stream.close()
+
+
 def _download_with_retry(url: str) -> object:
-    """Download con retry e backoff. Restituisce file-like object."""
+    """Download con retry e backoff. Restituisce file-like object (XML filtrato)."""
     import urllib.error
     last_error = None
     for attempt in range(1, MAX_RETRIES + 1):
@@ -62,7 +94,8 @@ def _download_with_retry(url: str) -> object:
                 "User-Agent": USER_AGENT,
                 "Accept": "application/xml, text/xml, */*",
             })
-            return urllib.request.urlopen(req, timeout=600)
+            resp = urllib.request.urlopen(req, timeout=600)
+            return _XMLCharFilter(resp)
         except (urllib.error.URLError, OSError) as e:
             last_error = e
             fname = url.split("/")[-1]
