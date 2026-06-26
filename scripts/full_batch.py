@@ -39,7 +39,9 @@ logger = logging.getLogger("rna.batch")
 
 NS = "{http://www.rna.it/RNA_aiuto/schema}"
 TAG_AIUTO = f"{NS}AIUTO"
-USER_AGENT = "DataCivicLab/1.0 (+https://github.com/dataciviclab)"
+USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
+MAX_RETRIES = 5
+RETRY_DELAY = 10  # secondi
 
 # Tutti gli URL RNA
 RNA_URLS = [
@@ -48,6 +50,27 @@ RNA_URLS = [
     for m in range(1, 13)
     if not (y == 2026 and m > 6)  # ferma a marzo 2026
 ]
+
+
+def _download_with_retry(url: str) -> object:
+    """Download con retry e backoff. Restituisce file-like object."""
+    import urllib.error
+    last_error = None
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            req = urllib.request.Request(url, headers={
+                "User-Agent": USER_AGENT,
+                "Accept": "application/xml, text/xml, */*",
+                "Accept-Encoding": "gzip, deflate",
+            })
+            return urllib.request.urlopen(req, timeout=600)
+        except (urllib.error.URLError, OSError) as e:
+            last_error = e
+            fname = url.split("/")[-1]
+            logger.warning("  ⚠ %s tentativo %d/%d: %s", fname, attempt, MAX_RETRIES, e)
+            if attempt < MAX_RETRIES:
+                time.sleep(RETRY_DELAY * attempt)  # backoff: 10, 20, 30...
+    raise last_error  # type: ignore
 
 
 def process_url(url: str) -> dict:
@@ -59,8 +82,7 @@ def process_url(url: str) -> dict:
     logger.info("  ↓ %s", fname)
     t0 = time.time()
 
-    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
-    resp = urllib.request.urlopen(req, timeout=600)
+    resp = _download_with_retry(url)
 
     rows_by_year: dict[int, list] = {}
     total_aiuti = 0
