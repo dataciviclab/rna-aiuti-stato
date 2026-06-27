@@ -166,6 +166,62 @@ def flatten_aiuto(aiuto_elem: Any) -> list[dict[str, Any]]:
 
 
 # ---------------------------------------------------------------------------
+# Misure RNA (OpenData_Misura_*.xml)
+# ---------------------------------------------------------------------------
+
+MISURA_NS = "{http://www.rna.it/RNA_misura/schema}"
+
+
+def _misura_text(elem, tag: str) -> str:
+    """Testo di un figlio diretto di una Misura (namespace RNA misura)."""
+    child = elem.find(f"{MISURA_NS}{tag}")
+    if child is None or child.text is None:
+        return ""
+    return " ".join(child.text.split())
+
+
+def _misura_float(elem, tag: str) -> float | None:
+    raw = _misura_text(elem, tag)
+    if not raw:
+        return None
+    try:
+        return float(raw.replace(",", "."))
+    except (ValueError, TypeError):
+        return None
+
+
+def extract_misura(misura_elem) -> dict:
+    """Campi da un <MISURA>. Una misura = una riga."""
+    anno, mese = 0, 0
+    data_inizio = _misura_text(misura_elem, "DATA_INIZIO_MISURA")
+    if data_inizio:
+        anno, mese = parse_year_month(data_inizio[:10])
+
+    return {
+        "car": _misura_text(misura_elem, "CAR"),
+        "car_padre": _misura_text(misura_elem, "CAR_PADRE"),
+        "car_attivo": _misura_text(misura_elem, "CAR_ATTIVO"),
+        "titolo_misura": _misura_text(misura_elem, "TITOLO_MISURA"),
+        "des_tipo_misura": _misura_text(misura_elem, "DES_TIPO_MISURA"),
+        "cod_tipo_misura": _misura_text(misura_elem, "COD_TIPO_MISURA"),
+        "data_inizio_misura": data_inizio,
+        "data_fine_misura": _misura_text(misura_elem, "DATA_FINE_MISURA"),
+        "base_giuridica_nazionale": _misura_text(misura_elem, "BASE_GIURIDICA_NAZIONALE"),
+        "stato_membro": _misura_text(misura_elem, "STATO_MEMBRO"),
+        "cod_amm": _misura_text(misura_elem, "COD_AMM"),
+        "des_autorita": _misura_text(misura_elem, "DES_AUTORITA"),
+        "autorita_concedente": _misura_text(misura_elem, "AUTORITA_CONCEDENTE_TRASP_CE"),
+        "importo_prestiti_garantiti": _misura_float(misura_elem, "IMPORTO_PRESTITI_GARANTITI"),
+        "importo_aiuto_ad_hoc": _misura_float(misura_elem, "IMPORTO_AIUTO_AD_HOC"),
+        "link_aiuto": _misura_text(misura_elem, "LINK_AIUTO"),
+        "flag_quadro": _misura_text(misura_elem, "FLAG_QUADRO"),
+        "flag_modifica_regime": _misura_text(misura_elem, "FLAG_MODIFICA_REGIME_O_ESISTENTE"),
+        "anno": anno,
+        "mese": mese,
+    }
+
+
+# ---------------------------------------------------------------------------
 # Schema dati — single source of truth per colonne e tipi
 # ---------------------------------------------------------------------------
 # Allineato con dataset.yml. Se aggiungi/cambi un campo, aggiorna QUI
@@ -213,6 +269,31 @@ FIELD_NAMES: list[str] = [f.name for f in SCHEMA]
 
 DEDUP_KEY = ("cor", "id_componente", "cod_strumento")
 
+# Schema Misure RNA
+MISURA_SCHEMA = pa.schema([
+    pa.field("car", pa.string()),
+    pa.field("car_padre", pa.string()),
+    pa.field("car_attivo", pa.string()),
+    pa.field("titolo_misura", pa.string()),
+    pa.field("des_tipo_misura", pa.string()),
+    pa.field("cod_tipo_misura", pa.string()),
+    pa.field("data_inizio_misura", pa.string()),
+    pa.field("data_fine_misura", pa.string()),
+    pa.field("base_giuridica_nazionale", pa.string()),
+    pa.field("stato_membro", pa.string()),
+    pa.field("cod_amm", pa.string()),
+    pa.field("des_autorita", pa.string()),
+    pa.field("autorita_concedente", pa.string()),
+    pa.field("importo_prestiti_garantiti", pa.float64()),
+    pa.field("importo_aiuto_ad_hoc", pa.float64()),
+    pa.field("link_aiuto", pa.string()),
+    pa.field("flag_quadro", pa.string()),
+    pa.field("flag_modifica_regime", pa.string()),
+    pa.field("anno", pa.int32()),
+    pa.field("mese", pa.int32()),
+])
+MISURA_FIELD_NAMES: list[str] = [f.name for f in MISURA_SCHEMA]
+
 
 # ---------------------------------------------------------------------------
 # Utility
@@ -236,13 +317,21 @@ def parse_year_month(data_concessione: str) -> tuple[int, int]:
         return 0, 0
 
 
-def _to_table(rows: list[dict]) -> pa.Table:
-    """Converte una lista di dict in tabella PyArrow secondo SCHEMA."""
-    batch: dict[str, list] = {f: [] for f in FIELD_NAMES}
+def _to_table(rows: list[dict], schema: pa.Schema | None = None) -> pa.Table:
+    """Converte una lista di dict in tabella PyArrow.
+
+    Args:
+        rows: Lista di dict con campi allineati allo schema.
+        schema: Schema PyArrow da usare. Default SCHEMA (Aiuti).
+    """
+    if schema is None:
+        schema = SCHEMA
+    field_names = [f.name for f in schema]
+    batch: dict[str, list] = {f: [] for f in field_names}
     for row in rows:
-        for field in FIELD_NAMES:
+        for field in field_names:
             batch[field].append(row.get(field))
-    return pa.Table.from_pydict(batch, schema=SCHEMA)
+    return pa.Table.from_pydict(batch, schema=schema)
 
 
 # ---------------------------------------------------------------------------

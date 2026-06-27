@@ -31,29 +31,43 @@ from pathlib import Path
 import lxml.etree as ET
 import urllib.request
 
+import pyarrow.parquet as pq
+
 from rna_aiuti.parser import (
     flatten_aiuto,
+    extract_misura,
     parse_year_month,
     write_partition,
+    _to_table,
     XMLCharFilter,
     XMLTagFixer,
     summary as _summary,
 )
+from rna_aiuti.parser import MISURA_SCHEMA
 
 logger = logging.getLogger("rna.batch")
 
 NS = "{http://www.rna.it/RNA_aiuto/schema}"
+MISURA_NS = "{http://www.rna.it/RNA_misura/schema}"
 TAG_AIUTO = f"{NS}AIUTO"
+TAG_MISURA = f"{MISURA_NS}MISURA"
 USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
 MAX_RETRIES = 5
 RETRY_DELAY = 10  # secondi
 
-# Tutti gli URL RNA (2017-01 → 2026-06)
+# URL Aiuti (2017-01 → 2026-06)
 RNA_URLS = [
     f"https://www.rna.gov.it/sites/rna.mise.gov.it/files/opendata/OpenData_Aiuti_{y:04d}_{m:02d}.xml"
     for y in range(2017, 2027)
     for m in range(1, 13)
     if not (y == 2026 and m > 6)
+]
+
+# URL Misure (1994-01 → 2023-12)
+MISURA_URLS = [
+    f"https://www.rna.gov.it/sites/rna.mise.gov.it/files/opendata/OpenData_Misura_{y:04d}_{m:02d}.xml"
+    for y in range(1994, 2024)
+    for m in range(1, 13)
 ]
 
 
@@ -70,12 +84,16 @@ def _download_with_retry(url: str) -> object:
             })
             resp = urllib.request.urlopen(req, timeout=600)
             return XMLCharFilter(resp)
+        except urllib.error.HTTPError as e:
+            if e.code == 404:
+                raise  # 404 non è recuperabile, fallisce subito
+            last_error = e
         except (urllib.error.URLError, OSError) as e:
             last_error = e
-            fname = url.split("/")[-1]
-            logger.warning("  ⚠ %s tentativo %d/%d: %s", fname, attempt, MAX_RETRIES, e)
-            if attempt < MAX_RETRIES:
-                time.sleep(RETRY_DELAY * attempt)
+        fname = url.split("/")[-1]
+        logger.warning("  ⚠ %s tentativo %d/%d: %s", fname, attempt, MAX_RETRIES, last_error)
+        if attempt < MAX_RETRIES:
+            time.sleep(RETRY_DELAY * attempt)
     raise last_error  # type: ignore
 
 
@@ -126,6 +144,104 @@ def build_url_list(from_year: int, to_year: int) -> list[str]:
     return [u for u in RNA_URLS if from_year <= _year(u) <= to_year]
 
 
+def process_misura_url(url: str) -> dict:
+    """Scarica in streaming e parse un file Misura XML.
+
+    Restituisce {anno: [righe]}.
+    """
+    import lxml.etree as ET
+
+    fname = url.split("/")[-1]
+    logger.info("  ↓ %s", fname)
+    t0 = time.time()
+
+    resp = _download_with_retry(url)
+    resp = XMLTagFixer(resp)
+
+    rows_by_year: dict[int, list] = {}
+    total_misure = 0
+
+    context = ET.iterparse(resp, events=("end",), tag=TAG_MISURA, recover=True)
+    for _event, elem in context:
+        total_misure += 1
+        row = extract_misura(elem)
+        rows_by_year.setdefault(row["anno"], []).append(row)
+        elem.clear()
+        while elem.getprevious() is not None:
+            del elem.getparent()[0]
+
+    elapsed = time.time() - t0
+    total_rows = sum(len(v) for v in rows_by_year.values())
+    logger.info("  ✓ %s: %d misure → %d righe in %.1f sec",
+                fname, total_misure, total_rows, elapsed)
+    return rows_by_year
+
+
+def _run_misure(args):
+    """Batch Misure RNA (237 file, 1994-2023)."""
+    out_dir = Path(args.out if args.out != "data/derived/rna" else "data/derived/misure")
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    urls = MISURA_URLS
+    logger.info("RNA Misure — %d file · %d worker", len(urls), args.workers)
+    logger.info("Output: %s", out_dir)
+    logger.info("")
+
+    # Pulisce parquet misure esistenti
+    out_path = out_dir / "misure.parquet"
+    out_path.unlink(missing_ok=True)
+
+    t_start = time.time()
+    done = failed = total_rows = 0
+    all_rows: list[dict] = []
+
+    with ThreadPoolExecutor(max_workers=args.workers) as executor:
+        futmap = {executor.submit(process_misura_url, u): u for u in urls}
+        for fut in __import__("concurrent").futures.as_completed(futmap):
+            url = futmap[fut]
+            fname = url.split("/")[-1]
+            try:
+                result = fut.result()
+                for y, rows in result.items():
+                    if y == 0:
+                        continue
+                    all_rows.extend(rows)
+                    total_rows += len(rows)
+                done += 1
+            except Exception as e:
+                logger.error("  ✗ %s: %s", fname, e)
+                failed += 1
+
+    # Scrive un unico parquet cumulativo (non partizionato per anno)
+    if all_rows:
+        table = _to_table(all_rows, schema=MISURA_SCHEMA)
+        pq.write_table(table, str(out_path), compression="zstd")
+        logger.info("  → %s: %d righe", out_path.name, table.num_rows)
+
+    elapsed = time.time() - t_start
+    logger.info("")
+    logger.info("=== MISURE COMPLETATO ===")
+    logger.info("  File:   %d OK, %d falliti", done, failed)
+    logger.info("  Righe:  %d", total_rows)
+    logger.info("  Tempo:  %.1f min", elapsed / 60)
+
+    total_mb = out_path.stat().st_size / 1_000_000 if out_path.exists() else 0
+    logger.info("  Output: %s (%.1f MB)", out_dir, total_mb)
+
+    # Genera manifest (come per gli Aiuti)
+    logger.info("")
+    logger.info("Generazione manifest ...")
+    ret = __import__("subprocess").run(
+        [sys.executable, "scripts/generate_manifest.py", "--misure", str(out_dir)],
+        capture_output=True, text=True,
+    )
+    for line in ret.stdout.strip().split("\n"):
+        if line.strip():
+            logger.info("  %s", line)
+    if ret.returncode != 0:
+        logger.error("  generate_manifest fallito: %s", ret.stderr[:500])
+
+
 def main():
     parser = argparse.ArgumentParser(description="RNA batch parallelo")
     parser.add_argument("--from", dest="from_year", type=int, default=2017,
@@ -138,11 +254,17 @@ def main():
                         help="Processa tutti i 133 file (override --from/--to)")
     parser.add_argument("-o", "--out", type=str, default="data/derived/rna",
                         help="Directory output parquet (default: data/derived/rna)")
+    parser.add_argument("--misure", action="store_true",
+                        help="Processa le Misure (237 file, 1994-2023)")
     parser.add_argument("--summary", action="store_true",
                         help="Mostra riepilogo dei parquet nella directory output")
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(message)s")
+
+    if args.misure:
+        _run_misure(args)
+        return
 
     out_dir = Path(args.out)
 
