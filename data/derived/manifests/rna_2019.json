@@ -1,6 +1,6 @@
 {
   "year": 2019,
-  "updated_at": "2026-06-26T17:09:36Z",
+  "updated_at": "2026-06-27T12:42:12Z",
   "months": [
     1,
     2,
@@ -18,7 +18,7 @@
   "source_available_months": 12,
   "completeness": 1.0,
   "rows": 524502,
-  "size_mb": 27.3,
+  "size_mb": 27.4,
   "gcs_uri": "gs://dataciviclab-clean/rna-aiuti-stato/rna_2019.parquet",
   "parquet": "rna_2019.parquet"
 }
