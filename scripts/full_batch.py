@@ -98,10 +98,10 @@ def _download_with_retry(url: str) -> object:
     raise last_error  # type: ignore
 
 
-def process_url(url: str, tmp_dir: Path) -> int:
-    """Scarica in streaming e parse un file RNA, scrive SUBITO.
+def process_url(url: str, tmp_dir: Path, chunk_size: int = 5000) -> int:
+    """Scarica in streaming e parse un file RNA, con flush periodico.
 
-    Accumula per anno, poi scrive un tmp parquet per anno.
+    Accumula per anno e fluscia su disco ogni ``chunk_size`` aiuti.
     Restituisce il numero totale di righe processate.
     """
     import uuid
@@ -115,7 +115,21 @@ def process_url(url: str, tmp_dir: Path) -> int:
 
     rows_by_year: dict[int, list] = {}
     total_aiuti = 0
+    total_rows = 0
     suffix = uuid.uuid4().hex[:8]
+    part = 0
+
+    def _flush():
+        nonlocal part
+        for y, rows in rows_by_year.items():
+            if not rows or y == 0:
+                continue
+            tmp_path = tmp_dir / f"rna_{y}_{suffix}_{part:04d}.parquet"
+            table = _to_table(rows)
+            pq.write_table(table, str(tmp_path), compression="zstd")
+            rows.clear()
+        part += 1
+        rows_by_year.clear()  # clear all years
 
     context = ET.iterparse(resp, events=("end",), tag=TAG_AIUTO,
                            recover=True)
@@ -127,24 +141,22 @@ def process_url(url: str, tmp_dir: Path) -> int:
             row["anno"] = anno
             row["mese"] = mese
             rows_by_year.setdefault(anno, []).append(row)
+            total_rows += 1
 
         elem.clear()
         while elem.getprevious() is not None:
             del elem.getparent()[0]
 
-    # Scrive subito un tmp parquet per anno
-    total_rows = 0
-    for y, rows in rows_by_year.items():
-        if y == 0:
-            continue
-        tmp_path = tmp_dir / f"rna_{y}_{suffix}.parquet"
-        table = _to_table(rows)
-        pq.write_table(table, str(tmp_path), compression="zstd")
-        total_rows += len(rows)
+        # Flush periodico — libera RAM subito
+        if total_aiuti % chunk_size == 0:
+            _flush()
+
+    # Flush finale
+    _flush()
 
     elapsed = time.time() - t0
-    logger.info("  ✓ %s: %d aiuti → %d righe in %.1f sec",
-                fname, total_aiuti, total_rows, elapsed)
+    logger.info("  ✓ %s: %d aiuti → %d righe in %.1f sec (%d flush)",
+                fname, total_aiuti, total_rows, elapsed, part)
 
     return total_rows
 
@@ -309,10 +321,13 @@ def main():
         for y in range(args.from_year, args.to_year + 1):
             (out_dir / f"rna_{y}.parquet").unlink(missing_ok=True)
 
-    # Directory temporanea per scritture worker (ogni worker scrive
-    # il suo file dentro .tmp/ — merge finale dopo il loop)
+    # Directory temporanea per scritture worker — sempre pulita
     tmp_dir = out_dir / ".tmp"
-    tmp_dir.mkdir(exist_ok=True)
+    if tmp_dir.exists():
+        for f in tmp_dir.glob("rna_*.parquet"):
+            f.unlink()
+    else:
+        tmp_dir.mkdir(parents=True)
 
     t_start = time.time()
     done = 0
