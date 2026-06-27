@@ -1,0 +1,24 @@
+{
+  "year": 2024,
+  "updated_at": "2026-06-27T11:52:33Z",
+  "months": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12
+  ],
+  "source_available_months": 12,
+  "completeness": 1.0,
+  "rows": 2413641,
+  "size_mb": 90.3,
+  "gcs_uri": "gs://dataciviclab-clean/rna-aiuti-stato/rna_2024.parquet",
+  "parquet": "rna_2024.parquet"
+}
