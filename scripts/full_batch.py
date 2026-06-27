@@ -228,6 +228,19 @@ def _run_misure(args):
     total_mb = out_path.stat().st_size / 1_000_000 if out_path.exists() else 0
     logger.info("  Output: %s (%.1f MB)", out_dir, total_mb)
 
+    # Genera manifest Misure
+    logger.info("")
+    logger.info("Generazione manifest misure ...")
+    ret = __import__("subprocess").run(
+        [sys.executable, "scripts/generate_manifest.py", "--misure", str(out_dir)],
+        capture_output=True, text=True,
+    )
+    for line in ret.stdout.strip().split("\n"):
+        if line.strip():
+            logger.info("  %s", line)
+    if ret.returncode != 0:
+        logger.error("  generate_manifest misure fallito: %s", ret.stderr[:500])
+
 
 def main():
     parser = argparse.ArgumentParser(description="RNA batch parallelo")

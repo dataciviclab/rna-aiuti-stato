@@ -90,27 +90,59 @@ def build_index(year_manifests: list[dict]) -> dict:
     }
 
 
+def _generate_misure_manifest(parquet_dir: Path, manifest_dir: Path):
+    """Genera manifest per il parquet cumulativo delle Misure."""
+    misure_parquet = parquet_dir / "misure.parquet"
+    if not misure_parquet.exists():
+        return
+
+    meta = pq.read_metadata(str(misure_parquet))
+    size_mb = round(misure_parquet.stat().st_size / 1_000_000, 1)
+
+    manifest = {
+        "dataset": "rna_misure",
+        "description": "Registro Nazionale Aiuti di Stato — Misure (leggi e regimi)",
+        "updated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "source_url": "https://www.rna.gov.it/open-data",
+        "license": "CC BY 4.0",
+        "gcs_uri": f"{GCS_PREFIX}misure/misure.parquet",
+        "rows": meta.num_rows,
+        "size_mb": size_mb,
+        "schema_fields": 20,
+    }
+
+    out_path = manifest_dir / "misure_index.json"
+    out_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+    print(f"  {out_path.name}: {meta.num_rows:,} righe, {size_mb} MB")
+
+
 def main():
+    misure_mode = "--misure" in sys.argv
     parquet_dir = PARQUET_DIR
     manifest_dir = MANIFEST_DIR
 
-    if len(sys.argv) > 1:
-        parquet_dir = Path(sys.argv[1])
-    if len(sys.argv) > 2:
-        manifest_dir = Path(sys.argv[2])
+    # Estrai argomenti path (skip flag)
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    if len(args) > 0:
+        parquet_dir = Path(args[0])
+    if len(args) > 1:
+        manifest_dir = Path(args[1])
 
     manifest_dir.mkdir(parents=True, exist_ok=True)
+
+    if misure_mode:
+        _generate_misure_manifest(parquet_dir, manifest_dir)
+        return
+
+    # --- Aiuti (default) ---
     index_path = manifest_dir / "rna_index.json"
 
-    # Carica index esistente (accumulo tra run CI: ogni run aggiunge un anno)
+    # Carica index esistente (accumulo tra run CI)
     existing_index = {}
     if index_path.exists():
         existing_index = json.loads(index_path.read_text(encoding="utf-8"))
 
     parquet_files = sorted(parquet_dir.glob("rna_*.parquet"))
-
-    # Anni da rimuovere dall'index se i loro parquet non esistono più
-    # (es. dopo un --full che ha ricreato tutto)
     parquet_years = {int(p.stem.replace("rna_", "")) for p in parquet_files}
 
     year_manifests = []
@@ -118,22 +150,19 @@ def main():
         year = int(pf.stem.replace("rna_", ""))
         manifest = build_year_manifest(pf)
         year_manifests.append(manifest)
-
-        # Scrive manifest annuale
         out_path = manifest_dir / f"rna_{year}.json"
         out_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
         print(f"  {out_path.name}: {manifest['rows']:,} righe, {manifest['months']} mesi, "
               f"completeness {manifest['completeness']}")
 
-    # Merge con index esistente: mantiene gli anni non presenti nei parquet locali
-    # (utile quando la CI processa un anno alla volta)
+    # Merge con index esistente
     for y_str, ym in existing_index.get("year_manifests", {}).items():
         y = int(y_str)
         if y not in parquet_years and y not in {m["year"] for m in year_manifests}:
             year_manifests.append({
                 "year": y,
                 "months": ym["months"],
-                "source_available_months": None,  # non serve per index
+                "source_available_months": None,
                 "completeness": ym["completeness"],
                 "rows": ym["rows"],
                 "size_mb": ym["size_mb"],
