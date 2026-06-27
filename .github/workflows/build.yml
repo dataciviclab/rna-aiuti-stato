@@ -6,7 +6,7 @@ on:
       years:
         description: 'Anni da processare (es. "2023-2025" o "full")'
         required: false
-        default: "full"
+        default: "current"
       workers:
         description: 'Worker paralleli'
         required: false
@@ -42,7 +42,11 @@ jobs:
       - name: Configura anni
         id: years
         run: |
-          if [[ "${{ inputs.years }}" == "full" || "${{ inputs.years }}" == "" ]]; then
+          if [[ "${{ github.event_name }}" == "schedule" ]]; then
+            echo "range=--from $(date +%Y) --to $(date +%Y)" >> "$GITHUB_OUTPUT"
+          elif [[ "${{ inputs.years }}" == "current" ]]; then
+            echo "range=--from $(date +%Y) --to $(date +%Y)" >> "$GITHUB_OUTPUT"
+          elif [[ "${{ inputs.years }}" == "full" ]]; then
             echo "range=--full" >> "$GITHUB_OUTPUT"
           else
             # Formato "2023-2025" o "2025" (anno singolo)
