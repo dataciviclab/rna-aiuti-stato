@@ -98,7 +98,7 @@ def _download_with_retry(url: str) -> object:
     raise last_error  # type: ignore
 
 
-def process_url(url: str, tmp_dir: Path, chunk_size: int = 5000) -> int:
+def process_url(url: str, tmp_dir: Path, chunk_size: int = 50000) -> int:
     """Scarica in streaming e parse un file RNA, con flush periodico.
 
     Accumula per anno e fluscia su disco ogni ``chunk_size`` aiuti.
