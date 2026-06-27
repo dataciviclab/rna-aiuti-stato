@@ -84,12 +84,16 @@ def _download_with_retry(url: str) -> object:
             })
             resp = urllib.request.urlopen(req, timeout=600)
             return XMLCharFilter(resp)
+        except urllib.error.HTTPError as e:
+            if e.code == 404:
+                raise  # 404 non è recuperabile, fallisce subito
+            last_error = e
         except (urllib.error.URLError, OSError) as e:
             last_error = e
-            fname = url.split("/")[-1]
-            logger.warning("  ⚠ %s tentativo %d/%d: %s", fname, attempt, MAX_RETRIES, e)
-            if attempt < MAX_RETRIES:
-                time.sleep(RETRY_DELAY * attempt)
+        fname = url.split("/")[-1]
+        logger.warning("  ⚠ %s tentativo %d/%d: %s", fname, attempt, MAX_RETRIES, last_error)
+        if attempt < MAX_RETRIES:
+            time.sleep(RETRY_DELAY * attempt)
     raise last_error  # type: ignore
 
 

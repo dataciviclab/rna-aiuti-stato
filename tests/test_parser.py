@@ -11,15 +11,19 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 
 from rna_aiuti.parser import (
-    # Core
+    # Core Aiuti
     flatten_aiuto,
     extract_aiuto_base,
     extract_componente,
     extract_strumento,
+    # Core Misure
+    extract_misura,
     # Schema
     SCHEMA,
     FIELD_NAMES,
     DEDUP_KEY,
+    MISURA_SCHEMA,
+    MISURA_FIELD_NAMES,
     # I/O
     write_partition,
     _to_table,
@@ -439,3 +443,80 @@ def _make_sample_rows(year: int, cf: str) -> list[dict]:
         "anno": year,
         "mese": 6,
     }]
+
+
+# ---------------------------------------------------------------------------
+# Misure RNA
+# ---------------------------------------------------------------------------
+
+MISURA_SAMPLE = b"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ns0:LISTA_MISURE_TYPE xmlns="http://www.rna.it/RNA_misura/schema" xmlns:ns0="it.rna.rna_misura.schema">
+<MISURA>
+    <CAR_PADRE>1628</CAR_PADRE>
+    <COD_AMM>cciaavg</COD_AMM>
+    <COD_AUTORITA>ZONA_FRANCA</COD_AUTORITA>
+    <DES_AUTORITA>Camera di Commercio</DES_AUTORITA>
+    <STATO_MEMBRO>ITALIA</STATO_MEMBRO>
+    <CAR>1628</CAR>
+    <CAR_ATTIVO>28701</CAR_ATTIVO>
+    <TITOLO_MISURA>Test misura</TITOLO_MISURA>
+    <DATA_INIZIO_MISURA>1994-01-01T00:00:00.000+01:00</DATA_INIZIO_MISURA>
+    <DATA_FINE_MISURA>2050-12-31T00:00:00.000+01:00</DATA_FINE_MISURA>
+    <COD_TIPO_MISURA>1</COD_TIPO_MISURA>
+    <DES_TIPO_MISURA>Regime di aiuti</DES_TIPO_MISURA>
+    <FLAG_MODIFICA_REGIME_O_ESISTENTE>NO</FLAG_MODIFICA_REGIME_O_ESISTENTE>
+    <BASE_GIURIDICA_NAZIONALE>Legge test</BASE_GIURIDICA_NAZIONALE>
+    <FLAG_QUADRO>NO</FLAG_QUADRO>
+    <IMPORTO_PRESTITI_GARANTITI>0.00</IMPORTO_PRESTITI_GARANTITI>
+    <IMPORTO_AIUTO_AD_HOC>0.00</IMPORTO_AIUTO_AD_HOC>
+    <LINK_AIUTO>https://test.it</LINK_AIUTO>
+</MISURA>
+</ns0:LISTA_MISURE_TYPE>
+"""
+
+
+def test_extract_misura():
+    """Verifica estrazione campi da una Misura."""
+    root = ET.fromstring(MISURA_SAMPLE)
+    ns = "{http://www.rna.it/RNA_misura/schema}"
+    misura = root.find(f"{ns}MISURA")
+    assert misura is not None
+    row = extract_misura(misura)
+    assert row["car"] == "1628"
+    assert row["car_padre"] == "1628"
+    assert row["car_attivo"] == "28701"
+    assert row["titolo_misura"] == "Test misura"
+    assert row["des_tipo_misura"] == "Regime di aiuti"
+    assert row["cod_tipo_misura"] == "1"
+    assert row["data_inizio_misura"] == "1994-01-01T00:00:00.000+01:00"
+    assert row["data_fine_misura"] == "2050-12-31T00:00:00.000+01:00"
+    assert row["base_giuridica_nazionale"] == "Legge test"
+    assert row["stato_membro"] == "ITALIA"
+    assert row["importo_prestiti_garantiti"] == 0.0
+    assert row["importo_aiuto_ad_hoc"] == 0.0
+    assert row["flag_quadro"] == "NO"
+    assert row["flag_modifica_regime"] == "NO"
+    assert row["anno"] == 1994
+    assert row["mese"] == 1
+
+
+def test_misura_schema_has_20_fields():
+    """Lo schema Misure ha 20 campi."""
+    assert len(MISURA_SCHEMA) == 20
+    assert MISURA_FIELD_NAMES == [f.name for f in MISURA_SCHEMA]
+
+
+def test_misura_empty_fields():
+    """Campi mancanti restituiscono stringa vuota o None."""
+    xml = b"""<?xml version="1.0"?>
+<LISTA_MISURE_TYPE xmlns="http://www.rna.it/RNA_misura/schema">
+<MISURA></MISURA>
+</LISTA_MISURE_TYPE>"""
+    root = ET.fromstring(xml)
+    ns = "{http://www.rna.it/RNA_misura/schema}"
+    misura = root.find(f"{ns}MISURA")
+    row = extract_misura(misura)
+    assert row["car"] == ""
+    assert row["titolo_misura"] == ""
+    assert row["importo_prestiti_garantiti"] is None
+    assert row["anno"] == 0
