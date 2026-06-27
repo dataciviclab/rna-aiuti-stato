@@ -1,7 +1,7 @@
 {
   "dataset": "rna_aiuti_stato",
   "description": "Registro Nazionale Aiuti di Stato",
-  "updated_at": "2026-06-27T11:52:33Z",
+  "updated_at": "2026-06-27T12:18:27Z",
   "source_url": "https://www.rna.gov.it/open-data",
   "license": "CC BY 4.0",
   "gcs_prefix": "gs://dataciviclab-clean/rna-aiuti-stato/",
@@ -13,9 +13,31 @@
     2021,
     2022,
     2023,
-    2024
+    2024,
+    2025
   ],
   "year_manifests": {
+    "2025": {
+      "months": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "completeness": 1.0,
+      "rows": 2139134,
+      "size_mb": 93.2,
+      "gcs_uri": "gs://dataciviclab-clean/rna-aiuti-stato/rna_2025.parquet",
+      "manifest_uri": "manifests/rna_2025.json"
+    },
     "2024": {
       "months": [
         1,
@@ -185,8 +207,8 @@
       "manifest_uri": "manifests/rna_2019.json"
     }
   },
-  "total_rows": 14192656,
-  "total_size_mb": 581.9,
+  "total_rows": 16331790,
+  "total_size_mb": 675.1,
   "build_info": {
     "parser_version": "0.1.0",
     "schema_fields": 31
