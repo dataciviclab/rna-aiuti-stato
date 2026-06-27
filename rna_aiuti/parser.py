@@ -458,8 +458,6 @@ def write_partition(
     year: int,
     mode: str = "overwrite",
     dedup: bool = True,
-    prefix: str = "rna",
-    schema: pa.Schema | None = None,
 ) -> Path:
     """Scrive righe in un parquet annuale.
 
@@ -476,17 +474,11 @@ def write_partition(
     Returns:
         Path del parquet scritto.
     """
-    if schema is None:
-        schema = SCHEMA
-    if dedup and DEDUP_KEY and not all(k in [f.name for f in schema] for k in DEDUP_KEY):
-        logger.warning("  dedup disabilitato: schema non ha i campi %s", DEDUP_KEY)
-        dedup = False
-
     base_dir = Path(base_dir)
-    out_path = base_dir / f"{prefix}_{year}.parquet"
+    out_path = base_dir / f"rna_{year}.parquet"
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
-    new_table = _to_table(rows, schema=schema)
+    new_table = _to_table(rows)
     n_new = new_table.num_rows
 
     if mode == "overwrite":
