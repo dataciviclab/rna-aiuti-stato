@@ -479,7 +479,8 @@ def write_partition(
     if schema is None:
         schema = SCHEMA
     if dedup and DEDUP_KEY and not all(k in [f.name for f in schema] for k in DEDUP_KEY):
-        raise ValueError(f"dedup=True richiede i campi {DEDUP_KEY} nello schema")
+        logger.warning("  dedup disabilitato: schema non ha i campi %s", DEDUP_KEY)
+        dedup = False
 
     base_dir = Path(base_dir)
     out_path = base_dir / f"{prefix}_{year}.parquet"
@@ -536,68 +537,6 @@ def _dedup_table(table: pa.Table) -> pa.Table:
     if n_after < n_before:
         logger.info("    dedup: %d → %d righe", n_before, n_after)
     return pa.Table.from_pandas(df, schema=SCHEMA)
-
-
-def write_partition(
-    rows: list[dict],
-    base_dir: str | Path,
-    year: int,
-    mode: str = "overwrite",
-    dedup: bool = True,
-    prefix: str = "rna",
-    schema: pa.Schema | None = None,
-) -> Path:
-    """Scrive righe in un parquet annuale.
-
-    Args:
-        rows: Lista di dict con i campi allineati allo schema.
-        base_dir: Directory dei parquet annuali.
-        year: Anno (2000-2099).
-        mode: ``"overwrite"`` (default) sostituisce il file se esiste;
-              ``"append"`` concatena al file esistente.
-        dedup: Se True (default) e mode='overwrite', scarta righe con
-               ``(cor, id_componente, cod_strumento)`` duplicate (tiene
-               l'ultima occorrenza).
-        prefix: Prefisso del nome file (es. "rna" → rna_2024.parquet).
-        schema: Schema PyArrow da usare. Default SCHEMA (Aiuti).
-
-    Returns:
-        Path del parquet scritto.
-    """
-    if schema is None:
-        schema = SCHEMA
-
-    base_dir = Path(base_dir)
-    base_dir.mkdir(parents=True, exist_ok=True)
-    out_path = base_dir / f"{prefix}_{year}.parquet"
-
-    new_table = _to_table(rows, schema=schema)
-    n_new = new_table.num_rows
-
-    if mode == "overwrite":
-        if dedup:
-            new_table = _dedup_table(new_table)
-        pq.write_table(new_table, str(out_path), compression="zstd")
-        logger.info("  → %s: %d righe (scritto)", out_path.name, new_table.num_rows)
-    elif mode == "append":
-        if out_path.exists():
-            old_table = pq.read_table(str(out_path))
-            n_old = old_table.num_rows
-            combined = pa.concat_tables([old_table, new_table])
-            if dedup:
-                combined = _dedup_table(combined)
-            pq.write_table(combined, str(out_path), compression="zstd")
-            logger.info("  → %s: %d righe (old %d + new %d → %d)",
-                        out_path.name, combined.num_rows, n_old, n_new, combined.num_rows)
-        else:
-            if dedup:
-                new_table = _dedup_table(new_table)
-            pq.write_table(new_table, str(out_path), compression="zstd")
-            logger.info("  → %s: %d righe (nuovo)", out_path.name, new_table.num_rows)
-    else:
-        raise ValueError(f"mode deve essere 'overwrite' o 'append', non {mode!r}")
-
-    return out_path
 
 
 def extract_streaming(
