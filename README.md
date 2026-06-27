@@ -7,10 +7,11 @@
 | | Aiuti | Misure |
 |---|---|---|
 | Cosa | Singoli aiuti alle imprese | Leggi/regimi che autorizzano gli aiuti |
-| Periodo | 2017-oggi | 1994-2023 |
+| Periodo | 2017-2026 (completo) | 1994-2023 (completo) |
 | File XML | 114 | ~237 |
-| Righe | ~4M (e cresce) | ~13K |
-| Parquet | Annuale (`rna_YYYY.parquet`) | Unico (`misure.parquet`) |
+| Righe | **16.974.895** | **12.874** |
+| Parquet | Annuale (`rna_YYYY.parquet`, ~700 MB) | Unico (`misure.parquet`, 1.4 MB) |
+| Compressione | 40 GB XML → 700 MB (58:1) | — |
 
 **Aiuti**: ogni euro pubblico dato alle imprese — beneficiario, importo, concedente, settore, regione, CUP.
 
@@ -49,10 +50,10 @@ importo_prestiti_garantiti, importo_aiuto_ad_hoc  # importi
 ```bash
 pip install -e ".[dev]"
 
-# Aiuti — per anno
-python3 scripts/full_batch.py --from 2023 --to 2023
+# Aiuti — aggiornamento anno corrente
+python3 scripts/full_batch.py --from 2026 --to 2026
 
-# Aiuti — tutti gli anni
+# Aiuti — full bootstrap (tutti e 10 gli anni, ~3 ore)
 python3 scripts/full_batch.py --full
 
 # Misure — tutte (237 file, ~1 minuto)
@@ -106,9 +107,11 @@ rna-aiuti-stato/
 
 **Streaming**: download HTTP e parsing XML simultanei — mai un XML scritto su disco.
 
-**Worker**: 2 di default (picco RAM < 500 MB con 2 worker paralleli). Su VM con 12 GB si può salire a 4.
+**Worker**: 4 di default, picco RAM < 500 MB grazie al flush periodico (50k righe).
 
 **Manifest**: ogni anno completato genera `manifests/rna_YYYY.json` + `rna_index.json` cumulativo. La CI li committa su main.
+
+**Bootstrap completato**: 10 anni (2017-2026), ~17 milioni di righe, 704 MB di parquet. Lo schedule mensile processa solo l'anno corrente.
 
 **Robustezza**: `XMLCharFilter` (byte non validi) + `XMLTagFixer` (tag troncati) in cascata sullo stream.
 
