@@ -31,6 +31,7 @@ from pathlib import Path
 import lxml.etree as ET
 import urllib.request
 
+import pyarrow as pa
 import pyarrow.parquet as pq
 
 from rna_aiuti.parser import (
@@ -97,21 +98,24 @@ def _download_with_retry(url: str) -> object:
     raise last_error  # type: ignore
 
 
-def process_url(url: str) -> dict:
-    """Scarica in streaming e parse un file RNA.
+def process_url(url: str, tmp_dir: Path) -> int:
+    """Scarica in streaming e parse un file RNA, scrive SUBITO.
 
-    Restituisce {anno: [righe]}.
+    Accumula per anno, poi scrive un tmp parquet per anno.
+    Restituisce il numero totale di righe processate.
     """
+    import uuid
+
     fname = url.split("/")[-1]
     logger.info("  ↓ %s", fname)
     t0 = time.time()
 
     resp = _download_with_retry(url)
-    # Filtra tag troncati noti (BASE_GIURIDICA_NAZ, IMPORTO_NOMIN, …)
     resp = XMLTagFixer(resp)
 
     rows_by_year: dict[int, list] = {}
     total_aiuti = 0
+    suffix = uuid.uuid4().hex[:8]
 
     context = ET.iterparse(resp, events=("end",), tag=TAG_AIUTO,
                            recover=True)
@@ -128,12 +132,21 @@ def process_url(url: str) -> dict:
         while elem.getprevious() is not None:
             del elem.getparent()[0]
 
+    # Scrive subito un tmp parquet per anno
+    total_rows = 0
+    for y, rows in rows_by_year.items():
+        if y == 0:
+            continue
+        tmp_path = tmp_dir / f"rna_{y}_{suffix}.parquet"
+        table = _to_table(rows)
+        pq.write_table(table, str(tmp_path), compression="zstd")
+        total_rows += len(rows)
+
     elapsed = time.time() - t0
-    total_rows = sum(len(v) for v in rows_by_year.values())
     logger.info("  ✓ %s: %d aiuti → %d righe in %.1f sec",
                 fname, total_aiuti, total_rows, elapsed)
 
-    return rows_by_year
+    return total_rows
 
 
 def build_url_list(from_year: int, to_year: int) -> list[str]:
@@ -296,31 +309,46 @@ def main():
         for y in range(args.from_year, args.to_year + 1):
             (out_dir / f"rna_{y}.parquet").unlink(missing_ok=True)
 
+    # Directory temporanea per scritture worker (ogni worker scrive
+    # il suo file dentro .tmp/ — merge finale dopo il loop)
+    tmp_dir = out_dir / ".tmp"
+    tmp_dir.mkdir(exist_ok=True)
+
     t_start = time.time()
     done = 0
     failed = 0
     total_rows = 0
 
     with ThreadPoolExecutor(max_workers=args.workers) as executor:
-        futmap = {executor.submit(process_url, u): u for u in urls}
+        futmap = {executor.submit(process_url, u, tmp_dir): u for u in urls}
 
         for fut in as_completed(futmap):
             url = futmap[fut]
             fname = url.split("/")[-1]
             try:
-                result = fut.result()
-                for y, rows in result.items():
-                    if y == 0:
-                        continue
-                    # Appende SUBITO per file — niente accumulo in RAM.
-                    # Ogni run parte da parquet puliti (cleanup sopra),
-                    # quindi i mesi si accumulano senza duplicati.
-                    write_partition(rows, out_dir, y, mode="append", dedup=False)
-                    total_rows += len(rows)
+                n = fut.result()
+                total_rows += n
                 done += 1
             except Exception as e:
                 logger.error("  ✗ %s: %s", fname, e)
                 failed += 1
+
+    # Merge tmp per anno
+    years = set()
+    for p in tmp_dir.glob("rna_*.parquet"):
+        y = int(p.stem.split("_")[1])
+        years.add(y)
+
+    for y in sorted(years):
+        parts = sorted(tmp_dir.glob(f"rna_{y}_*.parquet"))
+        if not parts:
+            continue
+        tbl = pa.concat_tables([pq.read_table(str(p)) for p in parts])
+        out_path = out_dir / f"rna_{y}.parquet"
+        pq.write_table(tbl, str(out_path), compression="zstd")
+        logger.info("  → rna_%d.parquet: %d righe (da %d parti)", y, tbl.num_rows, len(parts))
+        for p in parts:
+            p.unlink()
 
     elapsed = time.time() - t_start
     logger.info("")
