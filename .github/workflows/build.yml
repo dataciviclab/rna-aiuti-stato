@@ -78,7 +78,12 @@ jobs:
         if: steps.gcp-auth.outputs.gcp_ready == 'true'
         run: |
           gsutil -m cp "$RNA_OUT"/*.parquet "$GCS_BUCKET/"
-          echo "✅ Parquet pushati a $GCS_BUCKET"
+          echo "✅ Parquet aiuti pushati a $GCS_BUCKET"
+          # Carica anche parquet Misure se presente
+          if [ -d data/derived/misure ]; then
+            gsutil -m cp data/derived/misure/misure.parquet "$GCS_BUCKET/misure/"
+            echo "✅ Parquet misure pushato a ${GCS_BUCKET}misure/"
+          fi
 
       - name: Carica parquet come artifact CI (fallback)
         if: steps.gcp-auth.outputs.gcp_ready != 'true'
