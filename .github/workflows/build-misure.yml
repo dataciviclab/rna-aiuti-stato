@@ -1,0 +1,54 @@
+name: build-misure
+
+on:
+  workflow_dispatch:
+
+env:
+  GCS_BUCKET: gs://dataciviclab-clean/rna-aiuti-stato
+
+jobs:
+  build:
+    runs-on: [self-hosted, rna-arm64]
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -e "."
+
+      - name: Esegui batch Misure
+        run: |
+          python3 scripts/full_batch.py --misure --workers 4
+
+      - name: Autenticazione GCP
+        id: gcp-auth
+        if: env.GCP_SA_KEY_RNA != ''
+        run: |
+          printf '%s\n' "$GCP_SA_KEY_RNA" > /tmp/gcp-key.json
+          gcloud auth activate-service-account --key-file=/tmp/gcp-key.json
+          echo "gcp_ready=true" >> "$GITHUB_OUTPUT"
+        env:
+          GCP_SA_KEY_RNA: ${{ secrets.GCP_SA_KEY_RNA }}
+
+      - name: Pusha parquet a GCS
+        if: steps.gcp-auth.outputs.gcp_ready == 'true'
+        run: |
+          gsutil -m cp data/derived/misure/misure.parquet "$GCS_BUCKET/misure/"
+          echo "✅ Parquet misure pushato a $GCS_BUCKET/misure/"
+
+      - name: Commit manifest aggiornato
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/derived/manifests/
+          if git diff --cached --quiet; then
+            echo "Nessuna modifica ai manifest"
+          else
+            git commit -m "Aggiornamento manifest misure"
+            git push
+            echo "Manifest committato"
+          fi
