@@ -41,7 +41,7 @@ i dati direttamente in linguaggio naturale: "Quanto aiuto per regione nel 2023?"
 ### 2. Via DuckDB diretto
 
 ```bash
-wget https://storage.googleapis.com/dataciviclab-clean/rna/rna_2025.parquet
+wget https://storage.googleapis.com/dataciviclab-clean/rna-aiuti-stato/rna_2025.parquet
 duckdb -c "SELECT regione_beneficiario,
            ROUND(SUM(elemento_aiuto), 0) AS totale
            FROM 'rna_2025.parquet'
@@ -51,7 +51,7 @@ duckdb -c "SELECT regione_beneficiario,
 
 ### 3. Via download parquet
 
-Tutti i file parquet sono su GCS: `gs://dataciviclab-clean/rna/`
+Tutti i file parquet sono su GCS: `gs://dataciviclab-clean/rna-aiuti-stato/`
 
 ## Approfondimenti
 
@@ -75,8 +75,6 @@ cup, anno, mese                         # partizione
 ```
 
 ### Misure (20 campi)
-
-Schema completo: [docs/schema-misure.md](docs/schema-misure.md)
 
 ## Architettura
 
