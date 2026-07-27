@@ -1,123 +1,101 @@
-# RNA Aiuti di Stato — Registro Nazionale Aiuti di Stato
+# RNA Aiuti di Stato — 17 milioni di aiuti pubblici alle imprese italiane
 
-**Ogni aiuto pubblico concesso alle imprese italiane, in formato queryabile.**
+**480 miliardi di euro in 10 anni. Sai davvero dove sono andati?**
+
+Il Registro Nazionale Aiuti di Stato contiene ogni aiuto pubblico concesso
+alle imprese italiane dal 2017: chi lo ha ricevuto, quanto, da chi e per cosa.
+Ora è tutto in formato aperto e interrogabile.
 
 ## Cosa contiene
 
 | | Aiuti | Misure |
 |---|---|---|
-| Cosa | Singoli aiuti alle imprese | Leggi/regimi che autorizzano gli aiuti |
-| Periodo | 2017-2026 (completo) | 1994-2023 (completo) |
-| File XML | 114 | ~237 |
-| Righe | **16.974.895** | **12.874** |
-| Parquet | Annuale (`rna_YYYY.parquet`, ~700 MB) | Unico (`misure.parquet`, 1.4 MB) |
-| Compressione | 40 GB XML → 700 MB (58:1) | — |
+| **Cosa** | Singoli aiuti alle imprese | Leggi e regimi che autorizzano gli aiuti |
+| **Periodo** | 2017-2026 | 1994-2023 |
+| **Righe** | **16.974.895** | 12.874 |
+| **Ammontare** | ~480 miliardi di EUR | — |
+| **Compressione** | 40 GB XML → 700 MB (58:1) | — |
 
-**Aiuti**: ogni euro pubblico dato alle imprese — beneficiario, importo, concedente, settore, regione, CUP.
+**Aiuti**: ogni euro pubblico dato alle imprese — beneficiario, importo, concedente,
+settore, regione, CUP.
 
-**Misure**: ogni legge, decreto o regime che autorizza aiuti di Stato — `car`, titolo, base giuridica, autorità concedente, date validità.
+**Misure**: ogni legge, decreto o regime che autorizza aiuti di Stato.
 
-### Schema Aiuti (31 campi)
+## Esempi di domande
 
-Una riga = una combinazione **Aiuto × Componente × Strumento**.
+Con questi dati puoi scoprire:
 
-```
-data_concessione, car, cor          # identificativi
-denominazione_beneficiario, codice_fiscale_beneficiario  # chi
-regione_beneficiario               # dove
-soggetto_concedente                # chi ha erogato
-elemento_aiuto, importo_nominale   # quanto (EUR)
-procedimento                       # De Minimis / Notifica / Esenzione
-settore_attivita                   # NACE Rev.2
-strumento                          # Sovvenzione, Prestito, Garanzia
-cup                                # Codice Unico di Progetto
-anno, mese                         # partizione
-```
+- **Quali regioni italiane ricevono più aiuti di Stato?** E quali settori?
+- **Quanto aiuto è andato a imprese della tua città?**
+- **Che differenza c'è tra de minimis e notifica?** Quanti aiuti per tipo?
+- **Quali leggi hanno autorizzato più aiuti?**
+- **Come è cambiato l'importo totale anno per anno?**
 
-### Schema Misure (20 campi)
+## Tre modi per accedere ai dati
 
-```
-car                                # codice misura (PK)
-titolo_misura, des_tipo_misura     # descrizione
-data_inizio_misura, data_fine_misura  # validità
-base_giuridica_nazionale           # legge/ decreto
-cod_amm, des_autorita              # ente
-importo_prestiti_garantiti, importo_aiuto_ad_hoc  # importi
-```
+### 1. Via MCP (clean-query) — nessuna installazione
 
-## Uso rapido
+Se usi un ambiente con MCP (AI del Lab o IDE compatibile), puoi interrogare
+i dati direttamente in linguaggio naturale: "Quanto aiuto per regione nel 2023?"
+
+### 2. Via DuckDB diretto
 
 ```bash
-pip install -e ".[dev]"
-
-# Aiuti — aggiornamento anno corrente
-python3 scripts/full_batch.py --from 2026 --to 2026
-
-# Aiuti — full bootstrap (tutti e 10 gli anni, ~3 ore)
-python3 scripts/full_batch.py --full
-
-# Misure — tutte (237 file, ~1 minuto)
-python3 scripts/full_batch.py --misure
-
-# Summary
-python3 scripts/full_batch.py --summary
-python3 scripts/generate_manifest.py
+wget https://storage.googleapis.com/dataciviclab-clean/rna-aiuti-stato/rna_2025.parquet
+duckdb -c "SELECT regione_beneficiario,
+           ROUND(SUM(elemento_aiuto), 0) AS totale
+           FROM 'rna_2025.parquet'
+           GROUP BY regione_beneficiario
+           ORDER BY totale DESC"
 ```
 
-### Query esempio
+### 3. Via download parquet
 
-```sql
--- Quanto aiuto per regione nel 2023?
-SELECT regione_beneficiario, ROUND(SUM(elemento_aiuto), 0) AS totale
-FROM 'data/derived/rna/rna_*.parquet'
-WHERE anno = 2023
-GROUP BY regione_beneficiario ORDER BY totale DESC
+Tutti i file parquet sono su GCS: `gs://dataciviclab-clean/rna-aiuti-stato/`
 
--- Aiuti per tipo procedimento
-SELECT procedimento, COUNT(*) AS aiuti, ROUND(SUM(elemento_aiuto), 0) AS totale
-FROM 'data/derived/rna/rna_*.parquet'
-GROUP BY procedimento
+## Approfondimenti
 
--- Misure: quante per anno?
-SELECT anno, COUNT(*) AS misure
-FROM 'data/derived/misure/misure.parquet'
-GROUP BY anno ORDER BY anno
+- [Discussion: 11 domande sugli aiuti di Stato](https://github.com/orgs/dataciviclab/discussions/405)
+- [Analisi: RNA Aiuti di Stato — 480 miliardi alle imprese in 10 anni](https://github.com/dataciviclab/dataciviclab/tree/main/analisi/rna-aiuti-stato)
+
+## Schema dati
+
+### Aiuti (31 campi)
+
 ```
+data_concessione, car, cor              # identificativi
+denominazione_beneficiario, ...         # chi
+regione_beneficiario                    # dove
+soggetto_concedente                     # chi ha erogato
+elemento_aiuto, importo_nominale        # quanto (EUR)
+procedimento                            # De Minimis / Notifica / Esenzione
+settore_attivita                        # NACE Rev.2
+strumento                               # Sovvenzione, Prestito, Garanzia
+cup, anno, mese                         # partizione
+```
+
+### Misure (20 campi)
 
 ## Architettura
 
 ```
 rna-aiuti-stato/
-├── rna_aiuti/
-│   ├── __init__.py
-│   └── parser.py              ← parsing, schema, I/O, filtri stream
-├── scripts/
-│   ├── full_batch.py           ← CI pipeline: worker paralleli, aiuti + misure
-│   ├── extract.py              ← CLI per singolo file (thin)
-│   └── generate_manifest.py    ← manifest annuali + index
-├── tests/
-│   └── test_parser.py          ← 26 test
-├── data/
-│   ├── derived/rna/            ← parquet annuali Aiuti
-│   ├── derived/misure/         ← parquet unico Misure
-│   └── derived/manifests/      ← manifest JSON per anno
+├── rna_aiuti/parser.py     ← parsing, schema, I/O, filtri stream
+├── scripts/                ← CI pipeline (full_batch.py, extract.py)
+├── tests/                  ← 26 test
+├── data/derived/           ← parquet pronti
 ├── dataset.yml
 └── pyproject.toml
 ```
 
-**Streaming**: download HTTP e parsing XML simultanei — mai un XML scritto su disco.
+**Streaming**: download HTTP e parsing XML simultanei, mai un XML su disco.
+**Worker**: 4 paralleli, RAM < 500 MB.
+**Bootstrap**: 10 anni processati, ~17M righe, CI mensile sull'anno corrente.
 
-**Worker**: 4 di default, picco RAM < 500 MB grazie al flush periodico (50k righe).
+## Partecipa
 
-**Manifest**: ogni anno completato genera `manifests/rna_YYYY.json` + `rna_index.json` cumulativo. La CI li committa su main.
-
-**Bootstrap completato**: 10 anni (2017-2026), ~17 milioni di righe, 704 MB di parquet. Lo schedule mensile processa solo l'anno corrente.
-
-**Robustezza**: `XMLCharFilter` (byte non validi) + `XMLTagFixer` (tag troncati) in cascata sullo stream.
-
-## CI
-
-Workflow `build` su self-hosted runner (Oracle Cloud ARM64, 2 OCPU, 12 GB RAM). Processa un anno alla volta (`--from YYYY --to YYYY`). Output su GCS + commit manifest.
+- **Hai una domanda su questi dati?** Apri una [Discussion](https://github.com/orgs/dataciviclab/discussions/new?category=Domanda)
+- **Vuoi contribuire al codice?** Vedi [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ## Licenza
 
