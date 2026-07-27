@@ -56,7 +56,7 @@ Tutti i file parquet sono su GCS: `gs://dataciviclab-clean/rna-aiuti-stato/`
 ## Approfondimenti
 
 - [Discussion: 11 domande sugli aiuti di Stato](https://github.com/orgs/dataciviclab/discussions/405)
-- [Analisi: RNA Aiuti di Stato — 480 miliardi alle imprese in 10 anni](https://github.com/dataciviclab/dataciviclab/tree/main/analisi/rna_aiuti_stato)
+- [Analisi: RNA Aiuti di Stato — 480 miliardi alle imprese in 10 anni](https://github.com/dataciviclab/dataciviclab/tree/main/analisi/rna-aiuti-stato)
 
 ## Schema dati
 
