@@ -1,0 +1,66 @@
+root: "../../out"
+schema_version: 1
+
+dataset:
+  name: "rna_misure"
+  source_id: "mimit_rna"
+  description: "Leggi, decreti e regimi che autorizzano aiuti di Stato in Italia. Collegabile agli aiuti via CAR. Dati dal Registro Nazionale Aiuti di Stato (MIMIT), 1994-2023."
+  tags: [finanza-pubblica, rna, misure]
+  category: finanza-pubblica
+  years: [2023]
+  time_coverage: {start_year: 1994, end_year: 2023}
+
+raw:
+  output_policy: "overwrite"
+  sources:
+    - name: "rna_misure_parquet"
+      type: "local_file"
+      args:
+        path: "../../data/derived/misure/misure.parquet"
+        filename: "misure.parquet"
+      primary: true
+
+clean:
+  sql: "sql/clean.sql"
+  required_columns: [car, car_padre, car_attivo, titolo_misura, des_tipo_misura, cod_tipo_misura, data_inizio_misura, data_fine_misura, base_giuridica_nazionale, stato_membro, cod_amm, des_autorita, autorita_concedente, importo_prestiti_garantiti, importo_aiuto_ad_hoc, link_aiuto, flag_quadro, flag_modifica_regime, anno, mese]
+  read:
+    source: auto
+    mode: latest
+  validate:
+    not_null: [anno]
+    min_rows: 10000
+    # car non è unico: la stessa misura ha più finestre di validità
+    # (es. car 1924 con periodo 2007-2021 e 2015-2030) — PK car+inizio
+    primary_key: [car, data_inizio_misura]
+
+mart:
+  tables:
+    # Misure per tipo (regime, ad hoc, quadro) con importi
+    - name: "mart_misure_per_tipo"
+      sql: "sql/mart_misure_per_tipo.sql"
+    # Misure ancora attive per anno di istituzione
+    - name: "mart_misure_attive"
+      sql: "sql/mart_misure_attive.sql"
+    # Top misure per importo (D11 discussion #405)
+    - name: "mart_top_misure"
+      sql: "sql/mart_top_misure.sql"
+  required_tables:
+    - "mart_misure_per_tipo"
+    - "mart_top_misure"
+  validate:
+    table_rules:
+      mart_misure_per_tipo:
+        required_columns: [des_tipo_misura, n_misure, prestiti_garantiti_eur, aiuto_ad_hoc_eur, totale_eur]
+        primary_key: [des_tipo_misura]
+        min_rows: 3
+      mart_misure_attive:
+        required_columns: [anno, n_misure_istituite, ancora_attive, quota_attive_pct]
+        primary_key: [anno]
+        min_rows: 10
+      mart_top_misure:
+        required_columns: [car, titolo_misura, des_tipo_misura, totale_eur, stato]
+        primary_key: [car, data_inizio_misura]
+        min_rows: 10000
+
+validation:
+  fail_on_error: true

@@ -1,0 +1,168 @@
+name: pipeline
+on:
+  workflow_dispatch:
+    inputs:
+      years:
+        description: 'Anni aiuti (es. "2024,2025" o "full")'
+        required: false
+        default: "full"
+  schedule:
+    # Mensile: full_batch rigenera solo l'anno corrente (i parquet storici
+    # restano sul runner persistente), poi il toolkit rifà clean+mart.
+    - cron: "0 6 5 * *"
+
+concurrency:
+  group: rna-pipeline-${{ github.ref || 'schedule' }}
+  cancel-in-progress: false
+
+jobs:
+  pipeline:
+    runs-on: [self-hosted, rna-arm64]
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install -e "."
+          pip install git+https://github.com/dataciviclab/lab-connectors.git
+          pip install git+https://github.com/dataciviclab/toolkit.git
+          pip install duckdb
+
+      # ── Genera parquet raw (XML → Parquet) ──────────────────────────────
+      - name: Configure years (full_batch)
+        id: years
+        run: |
+          if [[ "${{ github.event_name }}" == "schedule" ]]; then
+            echo "range=--from $(date +%Y) --to $(date +%Y)" >> "$GITHUB_OUTPUT"
+          elif [[ "${{ inputs.years }}" == "full" ]]; then
+            echo "range=--full" >> "$GITHUB_OUTPUT"
+          elif [[ "${{ inputs.years }}" == "current" ]]; then
+            echo "range=--from $(date +%Y) --to $(date +%Y)" >> "$GITHUB_OUTPUT"
+          else
+            IFS=',' read -ra YS <<< "${{ inputs.years }}"
+            echo "range=--from ${YS[0]} --to ${YS[-1]}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run full_batch (AIUTI)
+        run: |
+          python3 scripts/full_batch.py ${{ steps.years.outputs.range }} \
+            --workers 4 -o data/derived/rna
+
+      - name: Run full_batch (MISURE)
+        run: |
+          if [ -f data/derived/misure/misure.parquet ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            python3 scripts/full_batch.py --misure --workers 4
+          else
+            echo "misure.parquet già presente — skip full_batch misure"
+          fi
+
+      - name: Generate MANIFEST (aiuti)
+        run: python3 scripts/generate_manifest.py data/derived/rna data/derived/manifests
+
+      - name: Generate MANIFEST (misure)
+        run: python3 scripts/generate_manifest.py --misure data/derived/misure data/derived/manifests
+
+      - name: Commit manifest aggiornati
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/derived/manifests/
+          if git diff --cached --quiet; then
+            echo "Nessuna modifica ai manifest"
+          else
+            git commit -m "Aggiornamento manifest RNA"
+            git push
+          fi
+
+      # ── Toolkit: clean + mart (raw = local_file su data/derived) ────────
+      - name: Detect available years (aiuti)
+        id: aiuti-years
+        run: |
+          YEARS=$(ls data/derived/rna/rna_*.parquet 2>/dev/null | \
+            sed 's/.*rna_\([0-9]*\)\.parquet/\1/' | sort | tr '\n' ',' | sed 's/,$//')
+          echo "years=$YEARS" >> "$GITHUB_OUTPUT"
+          echo "years=$YEARS"
+
+      - name: Run toolkit (aiuti)
+        if: steps.aiuti-years.outputs.years != ''
+        run: |
+          python3 scripts/run_toolkit.py run --config datasets/rna-aiuti-stato/dataset.yml \
+            --years "${{ steps.aiuti-years.outputs.years }}"
+
+      - name: Run toolkit (misure)
+        if: hashFiles('data/derived/misure/misure.parquet') != ''
+        run: |
+          python3 scripts/run_toolkit.py run --config datasets/rna-misure/dataset.yml
+
+      # ── Push ONLY clean + mart (raw è locale, non pubblicato) ───────────
+      - name: Auth GCP
+        id: gcp-auth
+        if: env.GCP_SA_KEY_RNA != ''
+        run: |
+          printf '%s\n' "$GCP_SA_KEY_RNA" > /tmp/gcp-key.json
+          gcloud auth activate-service-account --key-file=/tmp/gcp-key.json
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+        env:
+          GCP_SA_KEY_RNA: ${{ secrets.GCP_SA_KEY_RNA }}
+
+      - name: Sync clean + mart to GCS
+        if: steps.gcp-auth.outputs.ready == 'true'
+        run: |
+          for slug in rna_aiuti_stato rna_misure; do
+            for year in $(ls "out/data/clean/$slug/" 2>/dev/null); do
+              gsutil -m rsync -r -x ".*/_(run|validate)/.*" \
+                "out/data/clean/$slug/$year/" "gs://dataciviclab-clean/$slug/$year/"
+            done
+            for year in $(ls "out/data/mart/$slug/" 2>/dev/null); do
+              gsutil -m rsync -r \
+                "out/data/mart/$slug/$year/" "gs://dataciviclab-mart/$slug/$year/"
+            done
+          done
+          echo "✅ Synced clean+mart → gs://dataciviclab-{clean,mart}/<slug>/{year}/"
+
+      # ── Registry (artifact catalogo) ────────────────────────────────────
+      - name: Build registry
+        run: python3 scripts/build_registry.py --write
+
+      - name: Check registry diff
+        id: diff
+        run: |
+          if git status --porcelain -- registry/ | grep -q .; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create draft registry PR
+        if: steps.diff.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REF: ${{ github.ref }}
+        run: |
+          BRANCH="post-merge-registry/${GITHUB_RUN_ID}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$BRANCH"
+          git add registry/
+          git commit -m "chore(post-merge): aggiorna registry" || exit 0
+          git push --force-with-lease -u origin "$BRANCH"
+          EXISTING_PR=$(gh pr list --head "$BRANCH" --json number --jq '.[0].number // empty')
+          if [ -n "$EXISTING_PR" ]; then
+            gh pr edit "$EXISTING_PR" --title "chore(post-merge): aggiorna registry" \
+              --body "Registry artifacts updated after pipeline run." --add-label post-merge
+          else
+            gh pr create --base main --head "$BRANCH" \
+              --title "chore(post-merge): aggiorna registry" \
+              --body "Registry artifacts updated after pipeline run." \
+              --label post-merge --draft
+          fi

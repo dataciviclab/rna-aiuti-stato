@@ -33,25 +33,31 @@ Con questi dati puoi scoprire:
 
 ## Tre modi per accedere ai dati
 
-### 1. Via MCP (clean-query) — nessuna installazione
+### 1. Via MCP (toolkit) — nessuna installazione
 
-Se usi un ambiente con MCP (AI del Lab o IDE compatibile), puoi interrogare
-i dati direttamente in linguaggio naturale: "Quanto aiuto per regione nel 2023?"
+I dataset sono pubblicati in formato standard (clean + mart parquet) e
+interrogabili con gli strumenti del toolkit del Lab: `toolkit_find`,
+`toolkit_dataset_overview`, `toolkit_layer`, `toolkit_registry_show`.
 
 ### 2. Via DuckDB diretto
 
 ```bash
-wget https://storage.googleapis.com/dataciviclab-clean/rna-aiuti-stato/rna_2025.parquet
+wget https://storage.googleapis.com/dataciviclab-clean/rna_aiuti_stato/2025/rna_aiuti_stato_2025_clean.parquet
 duckdb -c "SELECT regione_beneficiario,
            ROUND(SUM(elemento_aiuto), 0) AS totale
-           FROM 'rna_2025.parquet'
+           FROM 'rna_aiuti_stato_2025_clean.parquet'
            GROUP BY regione_beneficiario
            ORDER BY totale DESC"
 ```
 
 ### 3. Via download parquet
 
-Tutti i file parquet sono su GCS: `gs://dataciviclab-clean/rna-aiuti-stato/`
+Clean e mart pubblicati su GCS (layout year):
+
+- `gs://dataciviclab-clean/rna_aiuti_stato/{year}/`
+- `gs://dataciviclab-mart/rna_aiuti_stato/{year}/`
+- `gs://dataciviclab-clean/rna_misure/`
+- `gs://dataciviclab-mart/rna_misure/`
 
 ## Approfondimenti
 
@@ -80,17 +86,29 @@ cup, anno, mese                         # partizione
 
 ```
 rna-aiuti-stato/
-├── rna_aiuti/parser.py     ← parsing, schema, I/O, filtri stream
-├── scripts/                ← CI pipeline (full_batch.py, extract.py)
-├── tests/                  ← 26 test
-├── data/derived/           ← parquet pronti
-├── dataset.yml
+├── rna_aiuti/parser.py       ← parsing XML, schema, I/O, filtri stream
+├── scripts/                  ← full_batch.py (XML→parquet), build_registry.py, run_toolkit.py
+├── tests/                    ← 26 test
+├── data/derived/             ← parquet raw prodotti da full_batch (non in git)
+├── datasets/
+│   ├── rna-aiuti-stato/      ← dataset.yml + sql/ (clean, 7 mart)
+│   └── rna-misure/           ← dataset.yml + sql/ (clean, 3 mart)
+├── registry/                 ← registry.json (artifact catalogo, fusion ADR)
 └── pyproject.toml
 ```
 
-**Streaming**: download HTTP e parsing XML simultanei, mai un XML su disco.
-**Worker**: 4 paralleli, RAM < 500 MB.
-**Bootstrap**: 10 anni processati, ~17M righe, CI mensile sull'anno corrente.
+**Due fasi**:
+
+1. **Raw** — `full_batch.py` streamma e parsa l'XML RNA.gov.it → parquet in
+   `data/derived/` (mai un XML su disco, 4 worker, RAM < 500 MB).
+2. **Clean + mart** — il toolkit legge i parquet locali come `local_file` e
+   produce i parquet standardizzati + tabelle mart. Solo clean e mart vengono
+   pubblicati su GCS; il raw resta locale.
+
+**Registry**: `scripts/build_registry.py` genera `registry/registry.json`
+(catalogo standard del Lab). **CI**: `pipeline.yml` su runner self-hosted
+(full_batch + toolkit + push clean/mart), `check.yml` valida i config su PR,
+`test.yml` esegue i test del parser.
 
 ## Partecipa
 

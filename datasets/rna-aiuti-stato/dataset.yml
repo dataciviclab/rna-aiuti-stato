@@ -1,0 +1,63 @@
+root: "../../out"
+schema_version: 1
+
+dataset:
+  name: "rna_aiuti_stato"
+  source_id: "mimit_rna"
+  description: "Ogni aiuto pubblico concesso alle imprese italiane: beneficiario (CF e denominazione), soggetto concedente, importo, procedimento (De Minimis/notifica/esenzione), settore NACE, regione, CUP. Dati dal Registro Nazionale Aiuti di Stato (MIMIT), 2017-2026."
+  tags: [finanza-pubblica, rna, aiuti]
+  category: finanza-pubblica
+  years: [2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026]
+
+raw:
+  output_policy: "overwrite"
+  sources:
+    - name: "rna_aiuti_parquet"
+      type: "local_file"
+      args:
+        path: "../../data/derived/rna/rna_{year}.parquet"
+        filename: "rna_{year}.parquet"
+      primary: true
+
+clean:
+  sql: "sql/clean.sql"
+  read:
+    source: auto
+    mode: latest
+  required_columns:
+    - "anno"
+    - "elemento_aiuto"
+    - "regione_beneficiario"
+    - "codice_fiscale_beneficiario"
+  validate:
+    min_rows: 100000
+    not_null:
+      - "anno"
+      - "elemento_aiuto"
+      - "codice_fiscale_beneficiario"
+
+mart:
+  tables:
+    # ── Esistenti ──────────────────────────────────────
+    - name: "mart_aiuti_per_regione"
+      sql: "sql/mart_per_regione.sql"
+    - name: "mart_aiuti_per_procedimento"
+      sql: "sql/mart_per_procedimento.sql"
+    - name: "mart_aiuti_top_beneficiari"
+      sql: "sql/mart_top_beneficiari.sql"
+    # ── Nuovi (2026-07-24) ─────────────────────────────
+    - name: "mart_aiuti_per_obiettivo"
+      sql: "sql/mart_per_obiettivo.sql"
+    - name: "mart_aiuti_per_strumento"
+      sql: "sql/mart_per_strumento.sql"
+    - name: "mart_aiuti_tipo_beneficiario"
+      sql: "sql/mart_tipo_beneficiario.sql"
+    - name: "mart_aiuti_settore_regione"
+      sql: "sql/mart_settore_regione.sql"
+  required_tables:
+    - "mart_aiuti_per_regione"
+    - "mart_aiuti_per_obiettivo"
+  validate:
+    table_rules:
+      mart_aiuti_per_obiettivo:
+        min_rows: 10
