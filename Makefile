@@ -38,10 +38,10 @@ clean-runs:
 
 .PHONY: registry registry-write
 registry:
-	$(PYTHON) scripts/build_registry.py
+	toolkit registry build
 
 registry-write:
-	$(PYTHON) scripts/build_registry.py --write
+	toolkit registry build --write
 
 .PHONY: help
 help:
