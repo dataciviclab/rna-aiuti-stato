@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
     inputs:
       years:
-        description: 'Anni aiuti (default=current: rigenera solo l\'anno corrente da XML; il toolkit processa comunque tutti gli anni da data/derived)'
+        description: "Anni aiuti (default=current: rigenera solo l'anno corrente da XML; il toolkit processa comunque tutti gli anni da data/derived)"
         required: false
         default: "current"
   schedule:
