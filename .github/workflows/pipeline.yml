@@ -139,7 +139,7 @@ jobs:
 
       # ── Registry (artifact catalogo) ────────────────────────────────────
       - name: Build registry
-        run: python3 scripts/build_registry.py --write
+        run: toolkit registry build --write
 
       - name: Check registry diff
         id: diff

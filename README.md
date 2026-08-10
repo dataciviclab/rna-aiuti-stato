@@ -87,7 +87,7 @@ cup, anno, mese                         # partizione
 ```
 rna-aiuti-stato/
 ├── rna_aiuti/parser.py       ← parsing XML, schema, I/O, filtri stream
-├── scripts/                  ← full_batch.py (XML→parquet), build_registry.py
+├── scripts/                  ← full_batch.py (XML→parquet)
 ├── tests/                    ← 26 test
 ├── data/derived/             ← parquet raw prodotti da full_batch (non in git)
 ├── datasets/
@@ -105,7 +105,7 @@ rna-aiuti-stato/
    produce i parquet standardizzati + tabelle mart. Solo clean e mart vengono
    pubblicati su GCS; il raw resta locale.
 
-**Registry**: `scripts/build_registry.py` genera `registry/registry.json`
+**Registry**: `toolkit registry build --write` genera `registry/registry.json`
 (catalogo standard del Lab). **CI**: `pipeline.yml` su runner self-hosted
 (full_batch + toolkit + push clean/mart), `check.yml` valida i config su PR,
 `test.yml` esegue i test del parser.
