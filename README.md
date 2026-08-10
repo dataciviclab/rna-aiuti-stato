@@ -87,7 +87,7 @@ cup, anno, mese                         # partizione
 ```
 rna-aiuti-stato/
 ├── rna_aiuti/parser.py       ← parsing XML, schema, I/O, filtri stream
-├── scripts/                  ← full_batch.py (XML→parquet), build_registry.py, run_toolkit.py
+├── scripts/                  ← full_batch.py (XML→parquet), build_registry.py
 ├── tests/                    ← 26 test
 ├── data/derived/             ← parquet raw prodotti da full_batch (non in git)
 ├── datasets/

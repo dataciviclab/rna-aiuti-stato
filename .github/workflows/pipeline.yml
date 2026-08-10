@@ -96,13 +96,13 @@ jobs:
       - name: Run toolkit (aiuti)
         if: steps.aiuti-years.outputs.years != ''
         run: |
-          python3 scripts/run_toolkit.py run --config datasets/rna-aiuti-stato/dataset.yml \
+          toolkit run --config datasets/rna-aiuti-stato/dataset.yml \
             --years "${{ steps.aiuti-years.outputs.years }}"
 
       - name: Run toolkit (misure)
         if: hashFiles('data/derived/misure/misure.parquet') != ''
         run: |
-          python3 scripts/run_toolkit.py run --config datasets/rna-misure/dataset.yml
+          toolkit run --config datasets/rna-misure/dataset.yml
 
       # ── Push ONLY clean + mart (raw è locale, non pubblicato) ───────────
       - name: Auth GCP
