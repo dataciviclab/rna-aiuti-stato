@@ -146,9 +146,6 @@ jobs:
 
       - name: Create draft registry PR
         if: steps.diff.outputs.changed == 'true'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REF: ${{ github.ref }}
         run: |
           BRANCH="post-merge-registry/${GITHUB_RUN_ID}"
           git config user.name "github-actions[bot]"
@@ -157,13 +154,30 @@ jobs:
           git add registry/
           git commit -m "chore(post-merge): aggiorna registry" || exit 0
           git push --force-with-lease -u origin "$BRANCH"
-          EXISTING_PR=$(gh pr list --head "$BRANCH" --json number --jq '.[0].number // empty')
-          if [ -n "$EXISTING_PR" ]; then
-            gh pr edit "$EXISTING_PR" --title "chore(post-merge): aggiorna registry" \
-              --body "Registry artifacts updated after pipeline run." --add-label post-merge
-          else
-            gh pr create --base main --head "$BRANCH" \
-              --title "chore(post-merge): aggiorna registry" \
-              --body "Registry artifacts updated after pipeline run." \
-              --label post-merge --draft
-          fi
+          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
+
+      - name: Create/update draft registry PR
+        if: steps.diff.outputs.changed == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const branch = `post-merge-registry/${context.runId}`;
+            const { repo, owner } = context.repo;
+            const base = { owner, repo, head: branch, state: 'open' };
+            const existing = await github.rest.pulls.list(base);
+            const title = 'chore(post-merge): aggiorna registry';
+            const body = 'Registry artifacts updated after pipeline run.';
+            const params = { owner, repo, title, body, head: branch, base: 'main' };
+            if (existing.data.length > 0) {
+              await github.rest.pulls.update({
+                owner, repo, pull_number: existing.data[0].number, title, body
+              });
+              console.log(`PR aggiornata: #${existing.data[0].number}`);
+            } else {
+              params.draft = true;
+              const pr = await github.rest.pulls.create(params);
+              await github.rest.issues.addLabels({
+                owner, repo, issue_number: pr.data.number, labels: ['post-merge']
+              });
+              console.log(`PR creata: #${pr.data.number}`);
+            }
