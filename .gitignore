@@ -7,6 +7,9 @@ data/derived/*
 !data/derived/manifests/
 !data/derived/manifests/*.json
 
+# Output toolkit (raw/clean/mart locali + run records)
+out/
+
 # Python
 __pycache__/
 *.pyc
