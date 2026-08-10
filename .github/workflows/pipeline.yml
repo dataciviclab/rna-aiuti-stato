@@ -3,12 +3,13 @@ on:
   workflow_dispatch:
     inputs:
       years:
-        description: 'Anni aiuti (es. "2024,2025" o "full")'
+        description: 'Anni aiuti (default=current: rigenera solo l\'anno corrente da XML; il toolkit processa comunque tutti gli anni da data/derived)'
         required: false
-        default: "full"
+        default: "current"
   schedule:
     # Mensile: full_batch rigenera solo l'anno corrente (i parquet storici
-    # restano sul runner persistente), poi il toolkit rifà clean+mart.
+    # restano su data/derived, preservati da clean:false), poi il toolkit
+    # processa TUTTI gli anni presenti.
     - cron: "0 6 5 * *"
 
 concurrency:
