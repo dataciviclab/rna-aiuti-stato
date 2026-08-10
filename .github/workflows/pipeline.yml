@@ -25,6 +25,11 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
+          # clean:false — il default (clean:true) cancella i file gitignored
+          # (data/derived/*) a ogni run. Gli storici 2017-N devono persistere
+          # sul runner: full_batch rigenera solo l'anno corrente, il toolkit
+          # processa TUTTI gli anni da data/derived.
+          clean: false
 
       - uses: actions/setup-python@v6
         with:
