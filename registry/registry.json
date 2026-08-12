@@ -2,7 +2,7 @@
   "schema_version": 1,
   "repo": "rna-aiuti-stato",
   "source_repo": "dataciviclab/rna-aiuti-stato",
-  "updated_at": "2026-08-10",
+  "updated_at": "2026-08-12",
   "datasets": [
     {
       "slug": "rna_aiuti_stato",
@@ -14,18 +14,6 @@
         "start": 2017,
         "end": 2025
       },
-      "years": [
-        2017,
-        2018,
-        2019,
-        2020,
-        2021,
-        2022,
-        2023,
-        2024,
-        2025,
-        2026
-      ],
       "tags": [
         "finanza-pubblica",
         "rna",
@@ -213,14 +201,14 @@
         {
           "name": "anno",
           "type": "INTEGER",
-          "role": "metric",
+          "role": "dimension",
           "description": "",
           "semantic_type": "year"
         },
         {
           "name": "mese",
           "type": "INTEGER",
-          "role": "metric",
+          "role": "dimension",
           "description": "",
           "semantic_type": "month"
         }
@@ -231,7 +219,6 @@
         "multi_file": true
       },
       "stage": "incubating",
-      "registry_source": "derive_auto",
       "mart_refs": [
         "rna_aiuti_stato__mart_aiuti_per_regione",
         "rna_aiuti_stato__mart_aiuti_per_procedimento",
@@ -240,29 +227,7 @@
         "rna_aiuti_stato__mart_aiuti_per_strumento",
         "rna_aiuti_stato__mart_aiuti_tipo_beneficiario",
         "rna_aiuti_stato__mart_aiuti_settore_regione"
-      ],
-      "run": {
-        "run_id": "20260810T114612Z_d22e8956",
-        "year": 2026,
-        "status": "SUCCESS",
-        "quality_score": {
-          "raw": 100,
-          "clean": 100,
-          "mart": 100
-        },
-        "output_rows": {
-          "clean": 668459,
-          "mart": 2607
-        },
-        "output_bytes": {
-          "raw": 30829679,
-          "clean": 27874364,
-          "mart": 64130
-        },
-        "started_at": "2026-08-10T11:46:12.852637+00:00",
-        "finished_at": "2026-08-10T11:46:17.611503+00:00",
-        "duration_seconds": 4.759
-      }
+      ]
     },
     {
       "slug": "rna_misure",
@@ -274,9 +239,6 @@
         "start": 1994,
         "end": 2023
       },
-      "years": [
-        2023
-      ],
       "tags": [
         "finanza-pubblica",
         "rna",
@@ -395,14 +357,14 @@
         {
           "name": "anno",
           "type": "INTEGER",
-          "role": "metric",
+          "role": "dimension",
           "description": "",
           "semantic_type": "year"
         },
         {
           "name": "mese",
           "type": "INTEGER",
-          "role": "metric",
+          "role": "dimension",
           "description": "",
           "semantic_type": "month"
         }
@@ -413,34 +375,11 @@
         "multi_file": false
       },
       "stage": "incubating",
-      "registry_source": "derive_auto",
       "mart_refs": [
         "rna_misure__mart_misure_per_tipo",
         "rna_misure__mart_misure_attive",
         "rna_misure__mart_top_misure"
-      ],
-      "run": {
-        "run_id": "20260810T114618Z_e02f7f2c",
-        "year": 2023,
-        "status": "SUCCESS",
-        "quality_score": {
-          "raw": 100,
-          "clean": 100,
-          "mart": 100
-        },
-        "output_rows": {
-          "clean": 16551,
-          "mart": 16580
-        },
-        "output_bytes": {
-          "raw": 1689175,
-          "clean": 1513550,
-          "mart": 728656
-        },
-        "started_at": "2026-08-10T11:46:18.574538+00:00",
-        "finished_at": "2026-08-10T11:46:19.039578+00:00",
-        "duration_seconds": 0.465
-      }
+      ]
     }
   ],
   "marts": [
@@ -448,30 +387,6 @@
       "slug": "rna_aiuti_stato__mart_aiuti_per_obiettivo",
       "dataset": "rna_aiuti_stato",
       "table": "mart_aiuti_per_obiettivo",
-      "description": "rna_aiuti_stato — mart mart_aiuti_per_obiettivo",
-      "min_rows": 10,
-      "run": {
-        "run_id": "20260810T114612Z_d22e8956",
-        "year": 2026,
-        "status": "SUCCESS",
-        "quality_score": {
-          "raw": 100,
-          "clean": 100,
-          "mart": 100
-        },
-        "output_rows": {
-          "clean": 668459,
-          "mart": 2607
-        },
-        "output_bytes": {
-          "raw": 30829679,
-          "clean": 27874364,
-          "mart": 64130
-        },
-        "started_at": "2026-08-10T11:46:12.852637+00:00",
-        "finished_at": "2026-08-10T11:46:17.611503+00:00",
-        "duration_seconds": 4.759
-      },
       "location": {
         "type": "gcs",
         "path": "gs://dataciviclab-mart/rna_aiuti_stato/2026/mart_aiuti_per_obiettivo.parquet",
@@ -482,29 +397,6 @@
       "slug": "rna_aiuti_stato__mart_aiuti_per_procedimento",
       "dataset": "rna_aiuti_stato",
       "table": "mart_aiuti_per_procedimento",
-      "description": "rna_aiuti_stato — mart mart_aiuti_per_procedimento",
-      "run": {
-        "run_id": "20260810T114612Z_d22e8956",
-        "year": 2026,
-        "status": "SUCCESS",
-        "quality_score": {
-          "raw": 100,
-          "clean": 100,
-          "mart": 100
-        },
-        "output_rows": {
-          "clean": 668459,
-          "mart": 2607
-        },
-        "output_bytes": {
-          "raw": 30829679,
-          "clean": 27874364,
-          "mart": 64130
-        },
-        "started_at": "2026-08-10T11:46:12.852637+00:00",
-        "finished_at": "2026-08-10T11:46:17.611503+00:00",
-        "duration_seconds": 4.759
-      },
       "location": {
         "type": "gcs",
         "path": "gs://dataciviclab-mart/rna_aiuti_stato/2026/mart_aiuti_per_procedimento.parquet",
@@ -515,29 +407,6 @@
       "slug": "rna_aiuti_stato__mart_aiuti_per_regione",
       "dataset": "rna_aiuti_stato",
       "table": "mart_aiuti_per_regione",
-      "description": "rna_aiuti_stato — mart mart_aiuti_per_regione",
-      "run": {
-        "run_id": "20260810T114612Z_d22e8956",
-        "year": 2026,
-        "status": "SUCCESS",
-        "quality_score": {
-          "raw": 100,
-          "clean": 100,
-          "mart": 100
-        },
-        "output_rows": {
-          "clean": 668459,
-          "mart": 2607
-        },
-        "output_bytes": {
-          "raw": 30829679,
-          "clean": 27874364,
-          "mart": 64130
-        },
-        "started_at": "2026-08-10T11:46:12.852637+00:00",
-        "finished_at": "2026-08-10T11:46:17.611503+00:00",
-        "duration_seconds": 4.759
-      },
       "location": {
         "type": "gcs",
         "path": "gs://dataciviclab-mart/rna_aiuti_stato/2026/mart_aiuti_per_regione.parquet",
@@ -548,29 +417,6 @@
       "slug": "rna_aiuti_stato__mart_aiuti_per_strumento",
       "dataset": "rna_aiuti_stato",
       "table": "mart_aiuti_per_strumento",
-      "description": "rna_aiuti_stato — mart mart_aiuti_per_strumento",
-      "run": {
-        "run_id": "20260810T114612Z_d22e8956",
-        "year": 2026,
-        "status": "SUCCESS",
-        "quality_score": {
-          "raw": 100,
-          "clean": 100,
-          "mart": 100
-        },
-        "output_rows": {
-          "clean": 668459,
-          "mart": 2607
-        },
-        "output_bytes": {
-          "raw": 30829679,
-          "clean": 27874364,
-          "mart": 64130
-        },
-        "started_at": "2026-08-10T11:46:12.852637+00:00",
-        "finished_at": "2026-08-10T11:46:17.611503+00:00",
-        "duration_seconds": 4.759
-      },
       "location": {
         "type": "gcs",
         "path": "gs://dataciviclab-mart/rna_aiuti_stato/2026/mart_aiuti_per_strumento.parquet",
@@ -581,29 +427,6 @@
       "slug": "rna_aiuti_stato__mart_aiuti_settore_regione",
       "dataset": "rna_aiuti_stato",
       "table": "mart_aiuti_settore_regione",
-      "description": "rna_aiuti_stato — mart mart_aiuti_settore_regione",
-      "run": {
-        "run_id": "20260810T114612Z_d22e8956",
-        "year": 2026,
-        "status": "SUCCESS",
-        "quality_score": {
-          "raw": 100,
-          "clean": 100,
-          "mart": 100
-        },
-        "output_rows": {
-          "clean": 668459,
-          "mart": 2607
-        },
-        "output_bytes": {
-          "raw": 30829679,
-          "clean": 27874364,
-          "mart": 64130
-        },
-        "started_at": "2026-08-10T11:46:12.852637+00:00",
-        "finished_at": "2026-08-10T11:46:17.611503+00:00",
-        "duration_seconds": 4.759
-      },
       "location": {
         "type": "gcs",
         "path": "gs://dataciviclab-mart/rna_aiuti_stato/2026/mart_aiuti_settore_regione.parquet",
@@ -614,29 +437,6 @@
       "slug": "rna_aiuti_stato__mart_aiuti_tipo_beneficiario",
       "dataset": "rna_aiuti_stato",
       "table": "mart_aiuti_tipo_beneficiario",
-      "description": "rna_aiuti_stato — mart mart_aiuti_tipo_beneficiario",
-      "run": {
-        "run_id": "20260810T114612Z_d22e8956",
-        "year": 2026,
-        "status": "SUCCESS",
-        "quality_score": {
-          "raw": 100,
-          "clean": 100,
-          "mart": 100
-        },
-        "output_rows": {
-          "clean": 668459,
-          "mart": 2607
-        },
-        "output_bytes": {
-          "raw": 30829679,
-          "clean": 27874364,
-          "mart": 64130
-        },
-        "started_at": "2026-08-10T11:46:12.852637+00:00",
-        "finished_at": "2026-08-10T11:46:17.611503+00:00",
-        "duration_seconds": 4.759
-      },
       "location": {
         "type": "gcs",
         "path": "gs://dataciviclab-mart/rna_aiuti_stato/2026/mart_aiuti_tipo_beneficiario.parquet",
@@ -647,29 +447,6 @@
       "slug": "rna_aiuti_stato__mart_aiuti_top_beneficiari",
       "dataset": "rna_aiuti_stato",
       "table": "mart_aiuti_top_beneficiari",
-      "description": "rna_aiuti_stato — mart mart_aiuti_top_beneficiari",
-      "run": {
-        "run_id": "20260810T114612Z_d22e8956",
-        "year": 2026,
-        "status": "SUCCESS",
-        "quality_score": {
-          "raw": 100,
-          "clean": 100,
-          "mart": 100
-        },
-        "output_rows": {
-          "clean": 668459,
-          "mart": 2607
-        },
-        "output_bytes": {
-          "raw": 30829679,
-          "clean": 27874364,
-          "mart": 64130
-        },
-        "started_at": "2026-08-10T11:46:12.852637+00:00",
-        "finished_at": "2026-08-10T11:46:17.611503+00:00",
-        "duration_seconds": 4.759
-      },
       "location": {
         "type": "gcs",
         "path": "gs://dataciviclab-mart/rna_aiuti_stato/2026/mart_aiuti_top_beneficiari.parquet",
@@ -680,39 +457,6 @@
       "slug": "rna_misure__mart_misure_attive",
       "dataset": "rna_misure",
       "table": "mart_misure_attive",
-      "description": "rna_misure — mart mart_misure_attive",
-      "primary_key": [
-        "anno"
-      ],
-      "required_columns": [
-        "anno",
-        "n_misure_istituite",
-        "ancora_attive",
-        "quota_attive_pct"
-      ],
-      "min_rows": 10,
-      "run": {
-        "run_id": "20260810T114618Z_e02f7f2c",
-        "year": 2023,
-        "status": "SUCCESS",
-        "quality_score": {
-          "raw": 100,
-          "clean": 100,
-          "mart": 100
-        },
-        "output_rows": {
-          "clean": 16551,
-          "mart": 16580
-        },
-        "output_bytes": {
-          "raw": 1689175,
-          "clean": 1513550,
-          "mart": 728656
-        },
-        "started_at": "2026-08-10T11:46:18.574538+00:00",
-        "finished_at": "2026-08-10T11:46:19.039578+00:00",
-        "duration_seconds": 0.465
-      },
       "location": {
         "type": "gcs",
         "path": "gs://dataciviclab-mart/rna_misure/2023/mart_misure_attive.parquet",
@@ -723,40 +467,6 @@
       "slug": "rna_misure__mart_misure_per_tipo",
       "dataset": "rna_misure",
       "table": "mart_misure_per_tipo",
-      "description": "rna_misure — mart mart_misure_per_tipo",
-      "primary_key": [
-        "des_tipo_misura"
-      ],
-      "required_columns": [
-        "des_tipo_misura",
-        "n_misure",
-        "prestiti_garantiti_eur",
-        "aiuto_ad_hoc_eur",
-        "totale_eur"
-      ],
-      "min_rows": 3,
-      "run": {
-        "run_id": "20260810T114618Z_e02f7f2c",
-        "year": 2023,
-        "status": "SUCCESS",
-        "quality_score": {
-          "raw": 100,
-          "clean": 100,
-          "mart": 100
-        },
-        "output_rows": {
-          "clean": 16551,
-          "mart": 16580
-        },
-        "output_bytes": {
-          "raw": 1689175,
-          "clean": 1513550,
-          "mart": 728656
-        },
-        "started_at": "2026-08-10T11:46:18.574538+00:00",
-        "finished_at": "2026-08-10T11:46:19.039578+00:00",
-        "duration_seconds": 0.465
-      },
       "location": {
         "type": "gcs",
         "path": "gs://dataciviclab-mart/rna_misure/2023/mart_misure_per_tipo.parquet",
@@ -767,41 +477,6 @@
       "slug": "rna_misure__mart_top_misure",
       "dataset": "rna_misure",
       "table": "mart_top_misure",
-      "description": "rna_misure — mart mart_top_misure",
-      "primary_key": [
-        "car",
-        "data_inizio_misura"
-      ],
-      "required_columns": [
-        "car",
-        "titolo_misura",
-        "des_tipo_misura",
-        "totale_eur",
-        "stato"
-      ],
-      "min_rows": 10000,
-      "run": {
-        "run_id": "20260810T114618Z_e02f7f2c",
-        "year": 2023,
-        "status": "SUCCESS",
-        "quality_score": {
-          "raw": 100,
-          "clean": 100,
-          "mart": 100
-        },
-        "output_rows": {
-          "clean": 16551,
-          "mart": 16580
-        },
-        "output_bytes": {
-          "raw": 1689175,
-          "clean": 1513550,
-          "mart": 728656
-        },
-        "started_at": "2026-08-10T11:46:18.574538+00:00",
-        "finished_at": "2026-08-10T11:46:19.039578+00:00",
-        "duration_seconds": 0.465
-      },
       "location": {
         "type": "gcs",
         "path": "gs://dataciviclab-mart/rna_misure/2023/mart_top_misure.parquet",
@@ -817,18 +492,6 @@
       "label": "rna_aiuti_stato",
       "detail": "anni 2017-2026 — mart: si",
       "action": "",
-      "years": [
-        2017,
-        2018,
-        2019,
-        2020,
-        2021,
-        2022,
-        2023,
-        2024,
-        2025,
-        2026
-      ],
       "run": {
         "run_id": "20260810T114612Z_d22e8956",
         "year": 2026,
@@ -859,9 +522,6 @@
       "label": "rna_misure",
       "detail": "anno 2023 — mart: si",
       "action": "",
-      "years": [
-        2023
-      ],
       "run": {
         "run_id": "20260810T114618Z_e02f7f2c",
         "year": 2023,
@@ -886,12 +546,8 @@
       }
     }
   ],
-  "codelists": {
-    "source_repo": "dataciviclab/rna-aiuti-stato",
-    "codelists": {}
-  },
+  "codelists": [],
   "entities": {
-    "generated_from": "clean_catalog.json",
     "entities": {
       "Ente (o Impresa)": {
         "entity": "Ente (o Impresa)",
@@ -987,15 +643,6 @@
           "semantic_type": "municipality_code"
         }
       }
-    ],
-    "summary": {
-      "total_entities": 4,
-      "total_relations": 1
-    }
-  },
-  "summary": {
-    "datasets": 2,
-    "marts": 10,
-    "signals": 2
+    ]
   }
 }
