@@ -32,17 +32,9 @@ jobs:
           # processa TUTTI gli anni da data/derived.
           clean: false
 
-      - uses: actions/setup-python@v6
+      - uses: dataciviclab/.github/actions/python-setup@main
         with:
-          python-version: "3.12"
-          cache: pip
-
-      - name: Install dependencies
-        run: |
-          pip install -e "."
-          pip install git+https://github.com/dataciviclab/lab-connectors.git
-          pip install git+https://github.com/dataciviclab/toolkit.git
-          pip install duckdb
+          extra-packages: -e "."
 
       # ── Genera parquet raw (XML → Parquet) ──────────────────────────────
       - name: Configure years (full_batch)
@@ -113,13 +105,9 @@ jobs:
       # ── Push ONLY clean + mart (raw è locale, non pubblicato) ───────────
       - name: Auth GCP
         id: gcp-auth
-        if: env.GCP_SA_KEY_RNA != ''
-        run: |
-          printf '%s\n' "$GCP_SA_KEY_RNA" > /tmp/gcp-key.json
-          gcloud auth activate-service-account --key-file=/tmp/gcp-key.json
-          echo "ready=true" >> "$GITHUB_OUTPUT"
+        uses: dataciviclab/.github/actions/gcs-auth@main
         env:
-          GCP_SA_KEY_RNA: ${{ secrets.GCP_SA_KEY_RNA }}
+          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY_RNA }}
 
       - name: Sync clean + mart to GCS
         if: steps.gcp-auth.outputs.ready == 'true'
@@ -137,53 +125,8 @@ jobs:
           done
           echo "✅ Synced clean+mart → gs://dataciviclab-{clean,mart}/<slug>/{year}/"
 
-      # ── Registry (artifact catalogo) ────────────────────────────────────
-      - name: Build registry
-        run: toolkit registry build --write
-
-      - name: Check registry diff
-        id: diff
-        run: |
-          if git status --porcelain -- registry/ | grep -q .; then
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Create draft registry PR
-        if: steps.diff.outputs.changed == 'true'
-        run: |
-          BRANCH="post-merge-registry/${GITHUB_RUN_ID}"
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git checkout -B "$BRANCH"
-          git add registry/
-          git commit -m "chore(post-merge): aggiorna registry" || exit 0
-          git push --force-with-lease -u origin "$BRANCH"
-          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
-
-      - name: Create/update draft registry PR
-        if: steps.diff.outputs.changed == 'true'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const branch = `post-merge-registry/${context.runId}`;
-            const { repo, owner } = context.repo;
-            const base = { owner, repo, head: branch, state: 'open' };
-            const existing = await github.rest.pulls.list(base);
-            const title = 'chore(post-merge): aggiorna registry';
-            const body = 'Registry artifacts updated after pipeline run.';
-            const params = { owner, repo, title, body, head: branch, base: 'main' };
-            if (existing.data.length > 0) {
-              await github.rest.pulls.update({
-                owner, repo, pull_number: existing.data[0].number, title, body
-              });
-              console.log(`PR aggiornata: #${existing.data[0].number}`);
-            } else {
-              params.draft = true;
-              const pr = await github.rest.pulls.create(params);
-              await github.rest.issues.addLabels({
-                owner, repo, issue_number: pr.data.number, labels: ['post-merge']
-              });
-              console.log(`PR creata: #${pr.data.number}`);
-            }
+      # ── Registry (artifact catalogo) → draft PR (composite, stesso job) ──
+      - name: Registry update PR
+        uses: dataciviclab/.github/actions/registry-update-pr@main
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
