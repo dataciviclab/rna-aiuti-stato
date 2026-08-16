@@ -9,6 +9,7 @@ description = "Registro Nazionale Aiuti di Stato — XML → Parquet"
 license = {text = "MIT"}
 requires-python = ">=3.11"
 dependencies = [
+    "dataciviclab-toolkit @ git+https://github.com/dataciviclab/toolkit.git",
     "lxml>=5",
     "pyarrow>=14",
     "pandas>=2",

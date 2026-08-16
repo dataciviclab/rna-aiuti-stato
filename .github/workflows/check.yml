@@ -20,23 +20,8 @@ on:
 
 jobs:
   validate-config:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v6
-        with:
-          python-version: "3.12"
-
-      - name: Install dependencies
-        run: |
-          pip install git+https://github.com/dataciviclab/lab-connectors.git
-          pip install git+https://github.com/dataciviclab/toolkit.git
-          pip install duckdb mcp pytest
-
-      - name: Validate all dataset configs parse correctly
-        run: |
-          for cfg in $(find datasets -name dataset.yml | sort); do
-            echo "→ $cfg"
-            toolkit run preflight --config "$cfg" > /dev/null 2>&1 || exit 1
-          done
-          echo "✅ All configs valid"
+    uses: dataciviclab/.github/.github/workflows/dataset-config-check-reusable.yml@main
+    with:
+      install: "pip install -e ."
+      globs: "datasets"
+      years: "from-config"
