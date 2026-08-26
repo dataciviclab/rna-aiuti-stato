@@ -94,6 +94,12 @@ rna-aiuti-stato/
 │   ├── rna-aiuti-stato/      ← dataset.yml + sql/ (clean, 7 mart)
 │   └── rna-misure/           ← dataset.yml + sql/ (clean, 3 mart)
 ├── registry/                 ← registry.json (artifact catalogo, fusion ADR)
+├── dashboard/                ← Streamlit dashboard (4 pagine)
+│   ├── app.py                ← navigazione
+│   ├── sources.py            ← cache wrappers su lab-connectors
+│   ├── pages/                ← Overview, Territorio, Policy, Cerca
+│   ├── Dockerfile
+│   └── requirements.txt
 └── pyproject.toml
 ```
 
@@ -109,6 +115,25 @@ rna-aiuti-stato/
 (catalogo standard del Lab). **CI**: `pipeline.yml` su runner self-hosted
 (full_batch + toolkit + push clean/mart), `check.yml` valida i config su PR,
 `test.yml` esegue i test del parser.
+
+### Dashboard
+
+Streamlit interattiva per esplorare i dati. 4 pagine:
+
+- **Panoramica** — KPI nazionali, trend annuale, De Minimis vs Notifica, strumenti
+- **Territorio** — Choropleth Italia, ranking regioni, settori NACE
+- **Policy & Strumenti** — Obiettivi policy, composizione strumenti, top misure
+- **Cerca** — Ricerca beneficiario per denominazione o CF (query su clean layer)
+
+```bash
+cd dashboard
+pip install -r requirements.txt
+streamlit run app.py
+```
+
+Usa `lab-connectors[duckdb]` per leggere i parquet da GCS (clean + mart).
+Il modulo `duckdb/queries` in lab-connectors fornisce le funzioni di accesso
+ai dati; `sources.py` le wrappa con `@st.cache_data` per Streamlit.
 
 ## Partecipa
 
