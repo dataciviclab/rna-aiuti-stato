@@ -1,0 +1,3 @@
+# Root requirements.txt — used by Streamlit Community Cloud
+# Actual dependencies are in dashboard/requirements.txt
+-r dashboard/requirements.txt
