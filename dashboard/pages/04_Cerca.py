@@ -46,6 +46,9 @@ if query_text:
         "ROUND(elemento_aiuto, 2) AS importo, strumento"
     )
 
+    # Sanitize input SQL — DuckDB è read-only ma previeni injection
+    q = query_text.strip().replace("'", "''").replace(";", "").replace("--", "")
+
     if q.upper().replace(" ", "").isalpha():
         where = f"UPPER(denominazione_beneficiario) LIKE '%{q.upper()}%'"
     else:
