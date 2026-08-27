@@ -24,6 +24,7 @@ pages = {
     ],
     "Esplora": [
         st.Page("pages/04_Cerca.py", title="Cerca beneficiario", icon="🔍"),
+        st.Page("pages/05_SQL.py", title="Query SQL", icon="🧪"),
     ],
 }
 
