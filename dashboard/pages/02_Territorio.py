@@ -82,7 +82,7 @@ fig.update_layout(
     height=500,
     paper_bgcolor="rgba(0,0,0,0)",
 )
-st.plotly_chart(fig, use_container_width=True)
+st.plotly_chart(fig, width='stretch')
 
 st.markdown("---")
 
@@ -96,7 +96,7 @@ with col_rank:
     display_df.columns = ["Regione", metrica, "Imprese", "Aiuti"]
     st.dataframe(
         display_df.reset_index(drop=True),
-        use_container_width=True,
+        width='stretch',
         height=520,
         column_config={
             "Regione": st.column_config.TextColumn("Regione", width="medium"),

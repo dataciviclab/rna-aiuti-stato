@@ -62,7 +62,7 @@ n_imprese = df_reg_r["imprese"].sum()
 n_regioni = df_reg_r["regione_beneficiario"].nunique()
 
 k1, k2, k3, k4 = st.columns(4)
-k1.metric("ESL totale", fmt_eur(totale_esl))
+k1.metric("ESL totale", fmt_eur(totale_esl, compact=True))
 k2.metric("N. aiuti", fmt_num(int(n_aiuti)))
 k3.metric("N. imprese", fmt_num(int(n_imprese)))
 k4.metric("Regioni", n_regioni)
