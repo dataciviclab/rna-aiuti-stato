@@ -16,6 +16,7 @@ from lab_connectors.duckdb.queries import (
     load_mart_table as _load_mart_table,
     query_clean as _query_clean,
 )
+from lab_connectors.formatters import fmt_eur, fmt_num, fmt_pct
 
 # ── Costanti dominio ────────────────────────────────────────────────────────
 
@@ -67,27 +68,3 @@ def run_sql(sql: str, years: tuple[int, ...] = tuple(YEARS)):
 def get_row_count(year: int):
     """Conta righe clean per un anno (cached 1h)."""
     return _count_rows(SLUG, year)
-
-
-# ── Formattazione ───────────────────────────────────────────────────────────
-
-
-def fmt_eur(value: float) -> str:
-    """Formatta un valore in EUR leggibile."""
-    if abs(value) >= 1_000_000_000:
-        return f"€{value / 1_000_000_000:,.1f} mld"
-    if abs(value) >= 1_000_000:
-        return f"€{value / 1_000_000:,.1f} M"
-    if abs(value) >= 1_000:
-        return f"€{value / 1_000:,.0f} K"
-    return f"€{value:,.0f}"
-
-
-def fmt_num(value: int) -> str:
-    """Formatta un numero con separatori."""
-    return f"{value:,.0f}"
-
-
-def fmt_pct(value: float) -> str:
-    """Formatta una percentuale."""
-    return f"{value:.1f}%"
