@@ -123,7 +123,7 @@ display_misure = df_misure_sorted[[
     "titolo_misura", "des_tipo_misura", "totale_eur",
 ]].copy()
 display_misure.columns = ["Misure", "Tipo", "Totale EUR"]
-display_misure["Totale EUR"] = display_misure["Totale EUR"].apply(lambda x: fmt_eur(x) if pd.notna(x) else "—")
+display_misure["Totale EUR"] = display_misure["Totale EUR"].apply(lambda x: fmt_eur(x, compact=True) if pd.notna(x) else "—")
 
 st.dataframe(
     display_misure.reset_index(drop=True),

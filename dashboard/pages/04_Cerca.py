@@ -70,7 +70,7 @@ if query_text:
         k1.metric("Righe trovate", f"{len(df):,}")
         k2.metric("Tempo", f"{elapsed:.1f}s")
         totale = df["importo"].sum() if "importo" in df.columns else 0
-        k3.metric("ESL totale risultati", fmt_eur(totale))
+        k3.metric("ESL totale risultati", fmt_eur(totale, compact=True))
 
         st.markdown("---")
         st.dataframe(
