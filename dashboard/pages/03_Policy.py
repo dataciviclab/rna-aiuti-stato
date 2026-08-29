@@ -127,7 +127,7 @@ display_misure["Totale EUR"] = display_misure["Totale EUR"].apply(lambda x: fmt_
 
 st.dataframe(
     display_misure.reset_index(drop=True),
-    use_container_width=True,
+    width='stretch',
     height=560,
     column_config={
         "Misure": st.column_config.TextColumn("Misure", width="large"),

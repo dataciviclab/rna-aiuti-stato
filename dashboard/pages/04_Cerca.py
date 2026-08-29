@@ -75,7 +75,7 @@ if query_text:
         st.markdown("---")
         st.dataframe(
             df,
-            use_container_width=True,
+            width='stretch',
             height=min(400, 40 + len(df) * 35),
             column_config={
                 "denominazione_beneficiario": st.column_config.TextColumn("Denominazione", width="large"),
