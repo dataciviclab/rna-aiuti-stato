@@ -16,12 +16,17 @@ concurrency:
   group: rna-pipeline-${{ github.ref || 'schedule' }}
   cancel-in-progress: false
 
+env:
+  GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+  GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
 jobs:
   pipeline:
     runs-on: [self-hosted, rna-arm64]
     permissions:
       contents: write
       pull-requests: write
+      id-token: write
     steps:
       - uses: actions/checkout@v7
         with:
@@ -103,14 +108,20 @@ jobs:
           toolkit run --config datasets/rna-misure/dataset.yml
 
       # ── Push ONLY clean + mart (raw è locale, non pubblicato) ───────────
-      - name: Auth GCP
+      - name: GCP Auth (WIF)
         id: gcp-auth
-        uses: dataciviclab/.github/actions/gcs-auth@main
-        env:
-          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY_RNA }}
+        if: env.GCP_WORKLOAD_IDENTITY_PROVIDER != "" && env.GCP_SERVICE_ACCOUNT != ""
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+
+      - name: Setup gcloud
+        if: env.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != ''
+        uses: google-github-actions/setup-gcloud@v3
 
       - name: Sync clean + mart to GCS
-        if: steps.gcp-auth.outputs.ready == 'true'
+        if: env.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != ''
         run: |
           # Exclude run records (_run/) e metadata: solo parquet pubblici su GCS.
           for slug in rna_aiuti_stato rna_misure; do
