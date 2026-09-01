@@ -116,11 +116,11 @@ jobs:
           service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
 
       - name: Setup gcloud
-        if: steps.gcp-auth.outputs.outcome == "success"
+        if: steps.gcp-auth.outputs.outcome == 'success'
         uses: google-github-actions/setup-gcloud@v3
 
       - name: Sync clean + mart to GCS
-        if: steps.gcp-auth.outputs.outcome == "success"
+        if: steps.gcp-auth.outputs.outcome == 'success'
         run: |
           # Exclude run records (_run/) e metadata: solo parquet pubblici su GCS.
           for slug in rna_aiuti_stato rna_misure; do
