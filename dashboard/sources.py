@@ -49,6 +49,15 @@ else:
     MISURE_YEAR = None
 
 # Mart tables disponibili
+MART_REGIONE = "mart_aiuti_per_regione"
+MART_PROCEDIMENTO = "mart_aiuti_per_procedimento"
+MART_TOP = "mart_aiuti_top_beneficiari"
+MART_TIPO_BENEF = "mart_aiuti_tipo_beneficiario"
+MART_SETTORE = "mart_aiuti_settore_regione"
+MART_OBIETTIVO = "mart_aiuti_per_obiettivo"
+MART_STRUMENTO = "mart_aiuti_per_strumento"
+MART_MISURA = "mart_aiuti_per_misura"
+MART_TOP_MISURE = "mart_top_misure"
 
 
 # ── Cached wrappers ─────────────────────────────────────────────────────────
