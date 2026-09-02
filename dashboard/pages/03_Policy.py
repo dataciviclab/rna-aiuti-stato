@@ -5,10 +5,10 @@ import pandas as pd
 import streamlit as st
 
 from sources import (
+    MART_MISURA,
     MART_OBIETTIVO,
     MART_STRUMENTO,
     YEARS,
-    SLUG_MISURE,
     fmt_eur,
     fmt_num,
     load_mart,
@@ -112,27 +112,34 @@ st.altair_chart(chart_evo, width="stretch")
 
 st.markdown("---")
 
-# ── Top misure (da rna_misure) ─────────────────────────────────────────────
+# ── Top misure per EROGATO effettivo (join aiuti × misure) ─────────────────
 
-st.subheader("📜 Top 20 misure per importo garantito")
+st.subheader("📜 Top 20 misure per importo erogato")
+st.caption("Quanto è stato **effettivamente concesso** agli aiuti collegati a ogni misura (join su `car` con RNA Misure). Il plafond è la capacità autorizzata della misura.")
 
-df_misure = load_mart("mart_top_misure", 2023, SLUG_MISURE)
-df_misure_sorted = df_misure.sort_values("totale_eur", ascending=False).head(20)
+df_misure = load_mart(MART_MISURA, anno)
+df_misure_sorted = df_misure.sort_values("totale_esl", ascending=False).head(20)
 
 display_misure = df_misure_sorted[[
-    "titolo_misura", "des_tipo_misura", "totale_eur",
+    "titolo_misura", "des_tipo_misura", "imprese", "aiuti", "totale_esl", "plafond_totale",
 ]].copy()
-display_misure.columns = ["Misure", "Tipo", "Totale EUR"]
-display_misure["Totale EUR"] = display_misure["Totale EUR"].apply(lambda x: fmt_eur(x, compact=True) if pd.notna(x) else "—")
+display_misure.columns = ["Misura", "Tipo", "Imprese", "N. aiuti", "Erogato", "Plafond"]
+for c in ("Erogato", "Plafond"):
+    display_misure[c] = display_misure[c].apply(lambda x: fmt_eur(x, compact=True) if pd.notna(x) else "—")
+display_misure["Imprese"] = display_misure["Imprese"].apply(lambda x: fmt_num(x) if pd.notna(x) else "—")
+display_misure["N. aiuti"] = display_misure["N. aiuti"].apply(lambda x: fmt_num(x) if pd.notna(x) else "—")
 
 st.dataframe(
     display_misure.reset_index(drop=True),
     width='stretch',
     height=560,
     column_config={
-        "Misure": st.column_config.TextColumn("Misure", width="large"),
+        "Misura": st.column_config.TextColumn("Misura", width="large"),
         "Tipo": st.column_config.TextColumn("Tipo", width="medium"),
-        "Totale EUR": st.column_config.TextColumn("Totale EUR", width="medium"),
+        "Imprese": st.column_config.TextColumn("Imprese", width="small"),
+        "N. aiuti": st.column_config.TextColumn("N. aiuti", width="small"),
+        "Erogato": st.column_config.TextColumn("Erogato", width="small"),
+        "Plafond": st.column_config.TextColumn("Plafond", width="small"),
     },
 )
 
