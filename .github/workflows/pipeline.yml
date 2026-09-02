@@ -32,6 +32,11 @@ jobs:
           # processa TUTTI gli anni da data/derived.
           clean: false
 
+      - name: Configure git HTTPS auth
+        run: |
+          git config --global credential.helper store
+          echo "https://x-access-token:${{ github.token }}@github.com" > ~/.git-credentials
+
       - uses: dataciviclab/.github/actions/python-setup@main
         with:
           extra-packages: -e "."
