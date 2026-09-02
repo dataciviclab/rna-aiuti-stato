@@ -54,6 +54,9 @@ mart:
       sql: "sql/mart_tipo_beneficiario.sql"
     - name: "mart_aiuti_settore_regione"
       sql: "sql/mart_settore_regione.sql"
+    # ── Join con le misure (2026-09-02) ─────────────────
+    - name: "mart_aiuti_per_misura"
+      sql: "sql/mart_per_misura.sql"
   required_tables:
     - "mart_aiuti_per_regione"
     - "mart_aiuti_per_obiettivo"
@@ -61,3 +64,8 @@ mart:
     table_rules:
       mart_aiuti_per_obiettivo:
         min_rows: 10
+
+support:
+  - name: "misure"
+    config: "../rna-misure/dataset.yml"
+    years: [2027]
