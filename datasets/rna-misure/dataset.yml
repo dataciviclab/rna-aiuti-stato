@@ -4,11 +4,11 @@ schema_version: 1
 dataset:
   name: "rna_misure"
   source_id: "mimit_rna"
-  description: "Leggi, decreti e regimi che autorizzano aiuti di Stato in Italia. Collegabile agli aiuti via CAR. Dati dal Registro Nazionale Aiuti di Stato (MIMIT), 1994-2023."
+  description: "Leggi, decreti e regimi che autorizzano aiuti di Stato in Italia. Collegabile agli aiuti via CAR. Dati dal Registro Nazionale Aiuti di Stato (MIMIT), 1994-2027."
   tags: [finanza-pubblica, rna, misure]
   category: finanza-pubblica
-  years: [2023]
-  time_coverage: {start_year: 1994, end_year: 2023}
+  years: [2027]
+  time_coverage: {start_year: 1994, end_year: 2027}
 
 raw:
   output_policy: "overwrite"

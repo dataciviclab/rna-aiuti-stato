@@ -4,7 +4,7 @@
 
 - Le Misure definiscono i regimi di aiuto: ogni legge/decreto che autorizza aiuti di Stato
 - Collegabili agli Aiuti via `car` (codice misura)
-- Dati storici dal 1994 al 2023
+- Dati storici dal 1994 al 2027
 
 ## Note tecniche
 

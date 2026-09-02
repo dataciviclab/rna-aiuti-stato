@@ -64,10 +64,10 @@ RNA_URLS = [
     if not (y == 2026 and m > 6)
 ]
 
-# URL Misure (1994-01 → 2023-12)
+# URL Misure (1994-01 → 2027-12)
 MISURA_URLS = [
     f"https://www.rna.gov.it/sites/rna.mise.gov.it/files/opendata/OpenData_Misura_{y:04d}_{m:02d}.xml"
-    for y in range(1994, 2024)
+    for y in range(1994, 2028)
     for m in range(1, 13)
 ]
 
@@ -203,7 +203,7 @@ def process_misura_url(url: str) -> dict:
 
 
 def _run_misure(args):
-    """Batch Misure RNA (237 file, 1994-2023)."""
+    """Batch Misure RNA (408 file, 1994-2027)."""
     out_dir = Path(args.out if args.out != "data/derived/rna" else "data/derived/misure")
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -280,7 +280,7 @@ def main():
     parser.add_argument("-o", "--out", type=str, default="data/derived/rna",
                         help="Directory output parquet (default: data/derived/rna)")
     parser.add_argument("--misure", action="store_true",
-                        help="Processa le Misure (237 file, 1994-2023)")
+                        help="Processa le Misure (408 file, 1994-2027)")
     parser.add_argument("--summary", action="store_true",
                         help="Mostra riepilogo dei parquet nella directory output")
     args = parser.parse_args()

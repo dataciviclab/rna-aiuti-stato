@@ -232,7 +232,7 @@
     {
       "slug": "rna_misure",
       "name": "Rna Misure",
-      "description": "Leggi, decreti e regimi che autorizzano aiuti di Stato in Italia. Collegabile agli aiuti via CAR. Dati dal Registro Nazionale Aiuti di Stato (MIMIT), 1994-2023.",
+      "description": "Leggi, decreti e regimi che autorizzano aiuti di Stato in Italia. Collegabile agli aiuti via CAR. Dati dal Registro Nazionale Aiuti di Stato (MIMIT), 1994-2027.",
       "source": "",
       "source_id": "mimit_rna",
       "period": {
