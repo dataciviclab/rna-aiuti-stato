@@ -7,6 +7,7 @@ import streamlit as st
 from sources import (
     MART_OBIETTIVO,
     MART_STRUMENTO,
+    MISURE_YEAR,
     YEARS,
     SLUG_MISURE,
     fmt_eur,
@@ -116,7 +117,7 @@ st.markdown("---")
 
 st.subheader("📜 Top 20 misure per importo garantito")
 
-df_misure = load_mart("mart_top_misure", 2023, SLUG_MISURE)
+df_misure = load_mart("mart_top_misure", MISURE_YEAR, SLUG_MISURE)
 df_misure_sorted = df_misure.sort_values("totale_eur", ascending=False).head(20)
 
 display_misure = df_misure_sorted[[

@@ -48,6 +48,16 @@ MART_STRUMENTO = "mart_aiuti_per_strumento"
 # Mart tables rna_misure
 MART_TOP_MISURE = "mart_top_misure"
 
+# Anno del run misure: dataset cumulativo, years=[2027] → ultimo del period.
+# NO hardcode: derivato dal registry (rna_misure period 1994-2027).
+_ds_misure = next((d for d in _registry.datasets if d.slug == SLUG_MISURE), None)
+if _ds_misure and _ds_misure.period:
+    _pm = _ds_misure.period
+    _end_m = _pm.get("end") if isinstance(_pm, dict) else getattr(_pm, "end", None)
+    MISURE_YEAR = int(_end_m) if _end_m else None
+else:
+    MISURE_YEAR = None
+
 
 # ── Cached wrappers ─────────────────────────────────────────────────────────
 
