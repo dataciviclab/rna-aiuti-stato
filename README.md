@@ -11,7 +11,7 @@ Ora è tutto in formato aperto e interrogabile.
 | | Aiuti | Misure |
 |---|---|---|
 | **Cosa** | Singoli aiuti alle imprese | Leggi e regimi che autorizzano gli aiuti |
-| **Periodo** | 2017-2026 | 1994-2023 |
+| **Periodo** | 2017-2026 | 1994-2027 |
 | **Righe** | **16.974.895** | 12.874 |
 | **Ammontare** | ~480 miliardi di EUR | — |
 | **Compressione** | 40 GB XML → 700 MB (58:1) | — |
