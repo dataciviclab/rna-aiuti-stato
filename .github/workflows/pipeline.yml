@@ -105,9 +105,18 @@ jobs:
       # ── Push ONLY clean + mart (raw è locale, non pubblicato) ───────────
       - name: GCP Auth
         id: gcp-auth
-        uses: dataciviclab/.github/actions/gcs-auth@main
+        if: env.GCP_SA_KEY_RNA != ''
+        shell: bash
         env:
-          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY_RNA }}
+          GCP_SA_KEY_RNA: ${{ secrets.GCP_SA_KEY_RNA }}
+        run: |
+          if echo "$GCP_SA_KEY_RNA" | python3 -c "import json,sys; json.load(sys.stdin)" 2>/dev/null; then
+            printf '%s\n' "$GCP_SA_KEY_RNA" > /tmp/gcp-key.json
+          else
+            printf '%s\n' "$GCP_SA_KEY_RNA" | base64 -d > /tmp/gcp-key.json 2>/dev/null
+          fi
+          gcloud auth activate-service-account --key-file=/tmp/gcp-key.json
+          echo "ready=true" >> "$GITHUB_OUTPUT"
 
       - name: Sync clean + mart to GCS
         if: steps.gcp-auth.outputs.ready == 'true'
