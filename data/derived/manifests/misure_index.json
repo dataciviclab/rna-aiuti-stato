@@ -1,7 +1,7 @@
 {
   "dataset": "rna_misure",
   "description": "Registro Nazionale Aiuti di Stato \u2014 Misure (leggi e regimi)",
-  "updated_at": "2026-09-02T09:48:11Z",
+  "updated_at": "2026-09-02T11:04:49Z",
   "source_url": "https://www.rna.gov.it/open-data",
   "license": "CC BY 4.0",
   "gcs_uri": "gs://dataciviclab-clean/rna-aiuti-stato/misure/misure.parquet",
