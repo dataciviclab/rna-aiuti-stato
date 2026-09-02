@@ -2,7 +2,7 @@
   "schema_version": 1,
   "repo": "rna-aiuti-stato",
   "source_repo": "dataciviclab/rna-aiuti-stato",
-  "updated_at": "2026-08-12",
+  "updated_at": "2026-09-02",
   "datasets": [
     {
       "slug": "rna_aiuti_stato",
@@ -237,7 +237,7 @@
       "source_id": "mimit_rna",
       "period": {
         "start": 1994,
-        "end": 2023
+        "end": 2027
       },
       "tags": [
         "finanza-pubblica",
@@ -371,7 +371,7 @@
       ],
       "location": {
         "type": "gcs",
-        "path": "gs://dataciviclab-clean/rna_misure/2023/rna_misure_2023_clean.parquet",
+        "path": "gs://dataciviclab-clean/rna_misure/2027/rna_misure_2027_clean.parquet",
         "multi_file": false
       },
       "stage": "incubating",
@@ -459,7 +459,7 @@
       "table": "mart_misure_attive",
       "location": {
         "type": "gcs",
-        "path": "gs://dataciviclab-mart/rna_misure/2023/mart_misure_attive.parquet",
+        "path": "gs://dataciviclab-mart/rna_misure/2027/mart_misure_attive.parquet",
         "multi_file": false
       }
     },
@@ -469,7 +469,7 @@
       "table": "mart_misure_per_tipo",
       "location": {
         "type": "gcs",
-        "path": "gs://dataciviclab-mart/rna_misure/2023/mart_misure_per_tipo.parquet",
+        "path": "gs://dataciviclab-mart/rna_misure/2027/mart_misure_per_tipo.parquet",
         "multi_file": false
       }
     },
@@ -479,7 +479,7 @@
       "table": "mart_top_misure",
       "location": {
         "type": "gcs",
-        "path": "gs://dataciviclab-mart/rna_misure/2023/mart_top_misure.parquet",
+        "path": "gs://dataciviclab-mart/rna_misure/2027/mart_top_misure.parquet",
         "multi_file": false
       }
     }
@@ -493,7 +493,7 @@
       "detail": "anni 2017-2026 — mart: si",
       "action": "",
       "run": {
-        "run_id": "20260810T114612Z_d22e8956",
+        "run_id": "20260902T110744Z_7e9df725",
         "year": 2026,
         "status": "SUCCESS",
         "quality_score": {
@@ -502,17 +502,17 @@
           "mart": 100
         },
         "output_rows": {
-          "clean": 668459,
-          "mart": 2607
+          "clean": 667746,
+          "mart": 2602
         },
         "output_bytes": {
-          "raw": 30829679,
-          "clean": 27874364,
-          "mart": 64130
+          "raw": 30764893,
+          "clean": 27810656,
+          "mart": 64008
         },
-        "started_at": "2026-08-10T11:46:12.852637+00:00",
-        "finished_at": "2026-08-10T11:46:17.611503+00:00",
-        "duration_seconds": 4.759
+        "started_at": "2026-09-02T11:07:44.060933+00:00",
+        "finished_at": "2026-09-02T11:07:49.159715+00:00",
+        "duration_seconds": 5.099
       }
     },
     {
@@ -520,11 +520,11 @@
       "source_id": "mimit_rna",
       "status": "ok",
       "label": "rna_misure",
-      "detail": "anno 2023 — mart: si",
+      "detail": "anno 2027 — mart: si",
       "action": "",
       "run": {
-        "run_id": "20260810T114618Z_e02f7f2c",
-        "year": 2023,
+        "run_id": "20260902T110749Z_6ef01cc7",
+        "year": 2027,
         "status": "SUCCESS",
         "quality_score": {
           "raw": 100,
@@ -532,17 +532,17 @@
           "mart": 100
         },
         "output_rows": {
-          "clean": 16551,
-          "mart": 16580
+          "clean": 20760,
+          "mart": 20793
         },
         "output_bytes": {
-          "raw": 1689175,
-          "clean": 1513550,
-          "mart": 728656
+          "raw": 2198824,
+          "clean": 1932681,
+          "mart": 915991
         },
-        "started_at": "2026-08-10T11:46:18.574538+00:00",
-        "finished_at": "2026-08-10T11:46:19.039578+00:00",
-        "duration_seconds": 0.465
+        "started_at": "2026-09-02T11:07:49.908218+00:00",
+        "finished_at": "2026-09-02T11:07:50.352229+00:00",
+        "duration_seconds": 0.444
       }
     }
   ],
