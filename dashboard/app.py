@@ -6,12 +6,15 @@ RNA Aiuti di Stato · Dashboard Streamlit
 
 import streamlit as st
 
-st.set_page_config(
-    page_title="RNA Aiuti di Stato · Dashboard",
+from lab_connectors.branding import apply_branding
+
+st.set_page_config(    page_title="RNA Aiuti di Stato · Dashboard",
     page_icon="🇮🇹",
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
+apply_branding(repo_name="rna-aiuti-stato", repo_url="https://github.com/dataciviclab/rna-aiuti-stato")
 
 # Navigazione
 pages = {
@@ -29,10 +32,5 @@ pages = {
 }
 
 pg = st.navigation(pages, position="sidebar")
-
-st.sidebar.markdown("---")
-st.sidebar.caption("Dati: [Registro Nazionale Aiuti di Stato](https://www.registroNazionaleTrasparenza.it/) · MIMIT")
-st.sidebar.caption("Codice: [dataciviclab/rna-aiuti-stato](https://github.com/dataciviclab/rna-aiuti-stato)")
-st.sidebar.caption("[DataCivicLab](https://dataciviclab.org/) · CC BY 4.0")
 
 pg.run()
