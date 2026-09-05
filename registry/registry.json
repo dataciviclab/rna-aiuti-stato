@@ -2,7 +2,7 @@
   "schema_version": 1,
   "repo": "rna-aiuti-stato",
   "source_repo": "dataciviclab/rna-aiuti-stato",
-  "updated_at": "2026-09-02",
+  "updated_at": "2026-09-05",
   "datasets": [
     {
       "slug": "rna_aiuti_stato",
@@ -504,7 +504,7 @@
       "detail": "anni 2017-2026 — mart: si",
       "action": "",
       "run": {
-        "run_id": "20260902T190258Z_2a4d0224",
+        "run_id": "20260905T094950Z_7e13ee38",
         "year": 2026,
         "status": "SUCCESS",
         "quality_score": {
@@ -517,13 +517,13 @@
           "mart": 3102
         },
         "output_bytes": {
-          "raw": 30681021,
-          "clean": 27738071,
-          "mart": 95811
+          "raw": 30861846,
+          "clean": 27762788,
+          "mart": 95806
         },
-        "started_at": "2026-09-02T19:02:58.587670+00:00",
-        "finished_at": "2026-09-02T19:03:04.180266+00:00",
-        "duration_seconds": 5.593
+        "started_at": "2026-09-05T09:49:50.065452+00:00",
+        "finished_at": "2026-09-05T09:49:55.595752+00:00",
+        "duration_seconds": 5.53
       }
     },
     {
@@ -534,7 +534,7 @@
       "detail": "anno 2027 — mart: si",
       "action": "",
       "run": {
-        "run_id": "20260902T190304Z_33eb0314",
+        "run_id": "20260905T094956Z_041038c1",
         "year": 2027,
         "status": "SUCCESS",
         "quality_score": {
@@ -547,13 +547,13 @@
           "mart": 20793
         },
         "output_bytes": {
-          "raw": 2197625,
-          "clean": 1933806,
-          "mart": 916338
+          "raw": 2199467,
+          "clean": 1933133,
+          "mart": 916109
         },
-        "started_at": "2026-09-02T19:03:04.798686+00:00",
-        "finished_at": "2026-09-02T19:03:05.322608+00:00",
-        "duration_seconds": 0.524
+        "started_at": "2026-09-05T09:49:56.215714+00:00",
+        "finished_at": "2026-09-05T09:49:56.666560+00:00",
+        "duration_seconds": 0.451
       }
     }
   ],
