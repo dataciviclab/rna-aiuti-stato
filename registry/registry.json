@@ -227,7 +227,12 @@
         "rna_aiuti_stato__mart_aiuti_per_strumento",
         "rna_aiuti_stato__mart_aiuti_tipo_beneficiario",
         "rna_aiuti_stato__mart_aiuti_settore_regione",
-        "rna_aiuti_stato__mart_aiuti_per_misura"
+        "rna_aiuti_stato__mart_aiuti_per_misura",
+        "rna_aiuti_stato__mart_aiuti_concedenti",
+        "rna_aiuti_stato__mart_aiuti_regimi",
+        "rna_aiuti_stato__mart_aiuti_temporale",
+        "rna_aiuti_stato__mart_aiuti_concentrazione",
+        "rna_aiuti_stato__mart_aiuti_limiti"
       ]
     },
     {
@@ -385,6 +390,36 @@
   ],
   "marts": [
     {
+      "slug": "rna_aiuti_stato__mart_aiuti_concedenti",
+      "dataset": "rna_aiuti_stato",
+      "table": "mart_aiuti_concedenti",
+      "location": {
+        "type": "gcs",
+        "path": "gs://dataciviclab-mart/rna_aiuti_stato/2026/mart_aiuti_concedenti.parquet",
+        "multi_file": false
+      }
+    },
+    {
+      "slug": "rna_aiuti_stato__mart_aiuti_concentrazione",
+      "dataset": "rna_aiuti_stato",
+      "table": "mart_aiuti_concentrazione",
+      "location": {
+        "type": "gcs",
+        "path": "gs://dataciviclab-mart/rna_aiuti_stato/2026/mart_aiuti_concentrazione.parquet",
+        "multi_file": false
+      }
+    },
+    {
+      "slug": "rna_aiuti_stato__mart_aiuti_limiti",
+      "dataset": "rna_aiuti_stato",
+      "table": "mart_aiuti_limiti",
+      "location": {
+        "type": "gcs",
+        "path": "gs://dataciviclab-mart/rna_aiuti_stato/2026/mart_aiuti_limiti.parquet",
+        "multi_file": false
+      }
+    },
+    {
       "slug": "rna_aiuti_stato__mart_aiuti_per_misura",
       "dataset": "rna_aiuti_stato",
       "table": "mart_aiuti_per_misura",
@@ -435,12 +470,32 @@
       }
     },
     {
+      "slug": "rna_aiuti_stato__mart_aiuti_regimi",
+      "dataset": "rna_aiuti_stato",
+      "table": "mart_aiuti_regimi",
+      "location": {
+        "type": "gcs",
+        "path": "gs://dataciviclab-mart/rna_aiuti_stato/2026/mart_aiuti_regimi.parquet",
+        "multi_file": false
+      }
+    },
+    {
       "slug": "rna_aiuti_stato__mart_aiuti_settore_regione",
       "dataset": "rna_aiuti_stato",
       "table": "mart_aiuti_settore_regione",
       "location": {
         "type": "gcs",
         "path": "gs://dataciviclab-mart/rna_aiuti_stato/2026/mart_aiuti_settore_regione.parquet",
+        "multi_file": false
+      }
+    },
+    {
+      "slug": "rna_aiuti_stato__mart_aiuti_temporale",
+      "dataset": "rna_aiuti_stato",
+      "table": "mart_aiuti_temporale",
+      "location": {
+        "type": "gcs",
+        "path": "gs://dataciviclab-mart/rna_aiuti_stato/2026/mart_aiuti_temporale.parquet",
         "multi_file": false
       }
     },
@@ -504,7 +559,7 @@
       "detail": "anni 2017-2026 — mart: si",
       "action": "",
       "run": {
-        "run_id": "20261005T131249Z_897a5db9",
+        "run_id": "20261005T193256Z_fbd59e3e",
         "year": 2026,
         "status": "SUCCESS",
         "quality_score": {
@@ -514,16 +569,16 @@
         },
         "output_rows": {
           "clean": 667594,
-          "mart": 3102
+          "mart": 4105
         },
         "output_bytes": {
-          "raw": 30682145,
-          "clean": 27718914,
-          "mart": 95761
+          "raw": 30717783,
+          "clean": 27700284,
+          "mart": 128956
         },
-        "started_at": "2026-10-05T13:12:49.952595+00:00",
-        "finished_at": "2026-10-05T13:12:54.935981+00:00",
-        "duration_seconds": 4.983
+        "started_at": "2026-10-05T19:32:56.642681+00:00",
+        "finished_at": "2026-10-05T19:33:03.864815+00:00",
+        "duration_seconds": 7.222
       }
     },
     {
@@ -534,7 +589,7 @@
       "detail": "anno 2027 — mart: si",
       "action": "",
       "run": {
-        "run_id": "20261005T131255Z_add3bcde",
+        "run_id": "20261005T193304Z_4410087b",
         "year": 2027,
         "status": "SUCCESS",
         "quality_score": {
@@ -547,13 +602,13 @@
           "mart": 20940
         },
         "output_bytes": {
-          "raw": 2220331,
-          "clean": 1949027,
-          "mart": 922799
+          "raw": 2213240,
+          "clean": 1946735,
+          "mart": 923029
         },
-        "started_at": "2026-10-05T13:12:55.735334+00:00",
-        "finished_at": "2026-10-05T13:12:56.214246+00:00",
-        "duration_seconds": 0.479
+        "started_at": "2026-10-05T19:33:04.586676+00:00",
+        "finished_at": "2026-10-05T19:33:05.191656+00:00",
+        "duration_seconds": 0.605
       }
     }
   ],
