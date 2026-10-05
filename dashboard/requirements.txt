@@ -1,5 +1,9 @@
+# Generato da pyproject.toml [project.optional-dependencies] dashboard.
+# Aggiorna l'extra nel pyproject e mantieni questo file sincronizzato.
+# Streamlit Community Cloud legge solo requirements.txt.
 streamlit>=1.61
 plotly>=5.18
 altair>=6.2
 pandas>=3.0
+duckdb>=1.5.3
 lab-connectors[duckdb] @ git+https://github.com/dataciviclab/lab-connectors.git

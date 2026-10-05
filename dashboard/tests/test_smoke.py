@@ -1,23 +1,26 @@
-"""Smoke test — verifica che tutte le pagine si importano senza errori."""
+"""Smoke test — pagine dashboard compilano senza errori di sintassi.
+
+Pattern standard Lab (opere-pubbliche, dichiarazioni-italia, terzo-settore):
+py_compile sulle pagine. Nessun import di streamlit, nessun PYTHONPATH.
+"""
 
 from __future__ import annotations
 
-import importlib
+import py_compile
+from pathlib import Path
 
 import pytest
 
 pytestmark = pytest.mark.smoke
 
-PAGES = [
-    "pages.01_Overview",
-    "pages.02_Territorio",
-    "pages.03_Policy",
-    "pages.04_Cerca",
-    "pages.07_Chi_eroga",
-]
+PAGES_DIR = Path(__file__).resolve().parent.parent / "pages"
 
 
-@pytest.mark.parametrize("module", PAGES)
-def test_page_imports(module: str) -> None:
-    """Ogni pagina deve importarsi senza errori."""
-    importlib.import_module(module)
+@pytest.mark.parametrize(
+    "page",
+    sorted(PAGES_DIR.glob("*.py")),
+    ids=lambda p: p.stem,
+)
+def test_page_compiles(page: Path) -> None:
+    """Ogni pagina deve compilarsi senza errori di sintassi."""
+    py_compile.compile(str(page), doraise=True)

@@ -6,8 +6,11 @@ build-backend = "setuptools.build_meta"
 name = "rna-aiuti-stato"
 version = "0.1.0"
 description = "Registro Nazionale Aiuti di Stato — XML → Parquet"
-license = {text = "MIT"}
+readme = "README.md"
+# >=3.11: exception documentata (dipendenze legacy del parser XML)
 requires-python = ">=3.11"
+license = "MIT"
+
 dependencies = [
     "dataciviclab-toolkit @ git+https://github.com/dataciviclab/toolkit.git",
     "lxml>=5",
@@ -16,7 +19,37 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest"]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "ruff>=0.5",
+]
+# Fonte di verità dashboard (standards/pyproject.md).
+# dashboard/requirements.txt = pin export per Streamlit Cloud.
+dashboard = [
+    "streamlit>=1.61",
+    "plotly>=5.18",
+    "altair>=6.2",
+    "pandas>=3.0",
+    "duckdb>=1.5.3",
+    "lab-connectors[duckdb] @ git+https://github.com/dataciviclab/lab-connectors.git",
+]
+
+[project.urls]
+Home = "https://github.com/dataciviclab/rna-aiuti-stato"
 
 [tool.setuptools.packages.find]
 include = ["rna_aiuti*"]
+
+[tool.pytest.ini_options]
+markers = [
+    "contract: interfaccia pubblica, artifact, contratto",
+    "policy: regola Lab non ovvia",
+    "regression: bug documentato in issue/PR",
+    "adapter: adapter a servizio esterno",
+    "pure_unit: logica pura non banale",
+    "smoke: golden path minimo / pagine dashboard",
+]
+
+[tool.toolkit.extends]
+source_id = "mimit_rna"

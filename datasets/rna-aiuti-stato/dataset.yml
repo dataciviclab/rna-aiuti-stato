@@ -74,20 +74,18 @@ mart:
     - "mart_aiuti_concedenti"
     - "mart_aiuti_regimi"
     - "mart_aiuti_temporale"
-    - "mart_aiuti_concentrazione"
-    - "mart_aiuti_limiti"
   validate:
     table_rules:
       mart_aiuti_per_obiettivo:
         min_rows: 10
       mart_aiuti_concedenti:
-        min_rows: 5
+        min_rows: 50
       mart_aiuti_regimi:
-        min_rows: 2
+        min_rows: 5
       mart_aiuti_temporale:
-        min_rows: 12
+        min_rows: 24
       mart_aiuti_concentrazione:
-        min_rows: 2
+        min_rows: 5
       mart_aiuti_limiti:
         min_rows: 1
 

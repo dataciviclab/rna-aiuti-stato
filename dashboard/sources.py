@@ -1,8 +1,8 @@
 """Fonti dati per la dashboard RNA Aiuti di Stato.
 
 Layer sottile che wrappa ``lab_connectors.duckdb.queries`` con
-``@st.cache_data`` per Streamlit. Tutta la logica di risoluzione
-path e auto-detect locale/GCS sta in lab-connectors.
+``@st.cache_data`` per Streamlit. Path locale/GCS: auto-detect di
+``lab_connectors`` (da CWD / ``out/data``), come da contratto #22.
 """
 
 from __future__ import annotations
@@ -30,7 +30,6 @@ SLUG = "rna_aiuti_stato"
 SLUG_MISURE = "rna_misure"
 
 _registry = load_registry(_REPO_ROOT / "registry" / "registry.json")
-_local_root = str(_REPO_ROOT / "out" / "data") if (_REPO_ROOT / "out" / "data").is_dir() else None
 _ds = next((d for d in _registry.datasets if d.slug == SLUG), None)
 if _ds and _ds.period:
     _p = _ds.period
@@ -72,28 +71,28 @@ MART_LIMITI = "mart_aiuti_limiti"
 @st.cache_data(ttl=3600, show_spinner=False)
 def load_mart(table: str, year: int, slug: str = SLUG):
     """Carica un singolo mart table (cached 1h). Auto-detect locale/GCS."""
-    return _load_mart_table(slug, table, year, local_root=_local_root, registry=_registry)
+    return _load_mart_table(slug, table, year, registry=_registry)
 
 
 @st.cache_data(ttl=3600, show_spinner=False)
 def load_mart_years(table: str, years: tuple[int, ...] = tuple(YEARS), slug: str = SLUG):
     """Carica un mart table per tutti gli anni (cached 1h)."""
-    return _load_mart_all_years(slug, table, list(years), local_root=_local_root, registry=_registry)
+    return _load_mart_all_years(slug, table, list(years), registry=_registry)
 
 
 @st.cache_data(ttl=3600, show_spinner=False)
 def load_clean_data(years: tuple[int, ...] = tuple(YEARS)):
     """Carica il clean layer per tutti gli anni (cached 1h)."""
-    return _load_clean(SLUG, list(years), local_root=_local_root, registry=_registry)
+    return _load_clean(SLUG, list(years), registry=_registry)
 
 
 @st.cache_data(ttl=3600, show_spinner=False)
 def run_sql(sql: str, years: tuple[int, ...] = tuple(YEARS)):
     """Esegue SQL sul clean layer (cached 1h)."""
-    return _query_clean(SLUG, sql, list(years), local_root=_local_root, registry=_registry)
+    return _query_clean(SLUG, sql, list(years), registry=_registry)
 
 
 @st.cache_data(ttl=3600, show_spinner=False)
 def get_row_count(year: int):
     """Conta righe clean per un anno (cached 1h)."""
-    return _count_rows(SLUG, year, local_root=_local_root, registry=_registry)
+    return _count_rows(SLUG, year, registry=_registry)
