@@ -57,13 +57,39 @@ mart:
     # ── Join con le misure (2026-09-02) ─────────────────
     - name: "mart_aiuti_per_misura"
       sql: "sql/mart_per_misura.sql"
+    # ── Deep dive dashboard (2026-10-05) ───────────────
+    - name: "mart_aiuti_concedenti"
+      sql: "sql/mart_concedenti.sql"
+    - name: "mart_aiuti_regimi"
+      sql: "sql/mart_regimi.sql"
+    - name: "mart_aiuti_temporale"
+      sql: "sql/mart_temporale.sql"
+    - name: "mart_aiuti_concentrazione"
+      sql: "sql/mart_concentrazione.sql"
+    - name: "mart_aiuti_limiti"
+      sql: "sql/mart_limiti.sql"
   required_tables:
     - "mart_aiuti_per_regione"
     - "mart_aiuti_per_obiettivo"
+    - "mart_aiuti_concedenti"
+    - "mart_aiuti_regimi"
+    - "mart_aiuti_temporale"
+    - "mart_aiuti_concentrazione"
+    - "mart_aiuti_limiti"
   validate:
     table_rules:
       mart_aiuti_per_obiettivo:
         min_rows: 10
+      mart_aiuti_concedenti:
+        min_rows: 5
+      mart_aiuti_regimi:
+        min_rows: 2
+      mart_aiuti_temporale:
+        min_rows: 12
+      mart_aiuti_concentrazione:
+        min_rows: 2
+      mart_aiuti_limiti:
+        min_rows: 1
 
 support:
   - name: "misure"

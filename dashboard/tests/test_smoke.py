@@ -13,6 +13,7 @@ PAGES = [
     "pages.02_Territorio",
     "pages.03_Policy",
     "pages.04_Cerca",
+    "pages.07_Chi_eroga",
 ]
 
 
