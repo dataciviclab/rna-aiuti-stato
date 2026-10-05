@@ -83,7 +83,8 @@ mart:
       mart_aiuti_regimi:
         min_rows: 5
       mart_aiuti_temporale:
-        min_rows: 24
+        # Anni parziali (es. 2026 a metà anno) hanno meno di 12×3 righe
+        min_rows: 6
       mart_aiuti_concentrazione:
         min_rows: 5
       mart_aiuti_limiti:
