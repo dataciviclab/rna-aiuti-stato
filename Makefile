@@ -24,6 +24,16 @@ check:
 	done
 	@echo "✅ All configs valid"
 
+# --- Test ---
+
+.PHONY: test test-dashboard
+test:
+	$(PYTHON) -m pytest tests/ -q
+
+# py_compile pagine dashboard — locale == CI, zero extra streamlit
+test-dashboard:
+	$(PYTHON) -m pytest dashboard/tests/test_smoke.py -q
+
 # --- Pulizia ---
 
 .PHONY: clean

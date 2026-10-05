@@ -13,5 +13,8 @@ jobs:
       - uses: dataciviclab/.github/actions/python-setup@main
         with:
           extra-packages: -e ".[dev]"
-      - name: Test
-        run: python3 -m pytest tests/ -v
+      - name: Test parser
+        run: make test
+      - name: Test dashboard smoke
+        # py_compile sulle pagine — nessuna dipendenza streamlit in CI
+        run: make test-dashboard

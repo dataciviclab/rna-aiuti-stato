@@ -118,12 +118,18 @@ rna-aiuti-stato/
 
 ### Dashboard
 
-Streamlit interattiva per esplorare i dati. 4 pagine:
+Streamlit interattiva per esplorare i dati. Pagine:
 
-- **Panoramica** — KPI nazionali, trend annuale, De Minimis vs Notifica, strumenti
+- **Panoramica** — KPI nazionali, trend annuale, ritmo mensile, De Minimis vs Notifica, strumenti
 - **Territorio** — Choropleth Italia, ranking regioni, settori NACE
-- **Policy & Strumenti** — Obiettivi policy, composizione strumenti, top misure
+- **Policy & Strumenti** — Obiettivi policy, regimi UE, composizione strumenti, top misure
+- **Chi eroga** — Volume vs valore per soggetto concedente e tipologia
 - **Cerca** — Ricerca beneficiario per denominazione o CF (query su clean layer)
+- **Query SQL** — Interrogazione diretta del clean layer
+
+Mart deep-dive (2026-10): `mart_aiuti_concedenti`, `mart_aiuti_regimi`,
+`mart_aiuti_temporale` (in dashboard); `mart_aiuti_concentrazione` e
+`mart_aiuti_limiti` restano disponibili in SQL/pipeline (non ancora consumati da UI).
 
 ```bash
 cd dashboard
@@ -132,8 +138,14 @@ streamlit run app.py
 ```
 
 Usa `lab-connectors[duckdb]` per leggere i parquet da GCS (clean + mart).
-Il modulo `duckdb/queries` in lab-connectors fornisce le funzioni di accesso
-ai dati; `sources.py` le wrappa con `@st.cache_data` per Streamlit.
+Path locale/GCS: auto-detect di lab-connectors da CWD (`out/data`).
+Dipendenze dashboard: extra `dashboard` nel root `pyproject.toml`
+(`dashboard/requirements.txt` = pin export Streamlit Cloud).
+
+```bash
+make test          # parser
+make test-dashboard  # py_compile pagine
+```
 
 ## Partecipa
 

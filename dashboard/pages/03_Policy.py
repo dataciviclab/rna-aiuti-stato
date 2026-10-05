@@ -7,6 +7,7 @@ import streamlit as st
 from sources import (
     MART_MISURA,
     MART_OBIETTIVO,
+    MART_REGIMI,
     MART_STRUMENTO,
     YEARS,
     fmt_eur,
@@ -109,6 +110,91 @@ chart_evo = (
     .properties(height=350)
 )
 st.altair_chart(chart_evo, width="stretch")
+
+st.markdown("---")
+
+# ── Regimi UE: cosa autorizza gli aiuti ────────────────────────────────────
+
+st.subheader("🇪🇺 Regimi UE e procedimenti")
+st.caption(
+    "Il Temporary Crisis Framework e i regimi sulla crisi energetica pesano "
+    "oltre metà del valore registrato: non è un dettaglio tecnico."
+)
+
+df_reg = load_mart(MART_REGIMI, anno)
+df_reg_all = load_mart_years(MART_REGIMI)
+
+if not df_reg.empty:
+    col_r1, col_r2 = st.columns(2)
+
+    with col_r1:
+        df_reg_top = (
+            df_reg.groupby("regime", as_index=False)
+            .agg(totale=("totale_esl", "sum"), aiuti=("aiuti", "sum"))
+            .sort_values("totale", ascending=False)
+            .head(8)
+        )
+        chart_reg = (
+            alt.Chart(df_reg_top)
+            .mark_bar(cornerRadiusTopLeft=3, cornerRadiusTopRight=3)
+            .encode(
+                x=alt.X("totale:Q", title="ESL (€)", axis=alt.Axis(format="~s")),
+                y=alt.Y("regime:N", title="", sort="-x"),
+                tooltip=[
+                    alt.Tooltip("regime:N", title="Regime"),
+                    alt.Tooltip("totale:Q", title="ESL", format=",.0f"),
+                    alt.Tooltip("aiuti:Q", title="N. aiuti", format=",.0f"),
+                ],
+            )
+            .properties(height=340)
+        )
+        st.altair_chart(chart_reg, width="stretch")
+
+    with col_r2:
+        df_proc_reg = (
+            df_reg.groupby("procedimento", as_index=False)
+            .agg(totale=("totale_esl", "sum"))
+            .sort_values("totale", ascending=False)
+        )
+        chart_proc_reg = (
+            alt.Chart(df_proc_reg)
+            .mark_bar(cornerRadiusTopLeft=3, cornerRadiusTopRight=3, color="#6366f1")
+            .encode(
+                x=alt.X("totale:Q", title="ESL (€)", axis=alt.Axis(format="~s")),
+                y=alt.Y("procedimento:N", title="", sort="-x"),
+                tooltip=["procedimento", alt.Tooltip("totale:Q", format=",.0f")],
+            )
+            .properties(height=340)
+        )
+        st.altair_chart(chart_proc_reg, width="stretch")
+
+    if not df_reg_all.empty:
+        st.subheader("Evoluzione regimi UE nel tempo")
+        df_reg_trend = (
+            df_reg_all.groupby(["anno", "regime"], as_index=False)
+            .agg(totale=("totale_esl", "sum"))
+        )
+        top_reg = (
+            df_reg_trend.groupby("regime")["totale"]
+            .sum()
+            .nlargest(6)
+            .index.tolist()
+        )
+        df_reg_trend_top = df_reg_trend[df_reg_trend["regime"].isin(top_reg)]
+        chart_reg_trend = (
+            alt.Chart(df_reg_trend_top)
+            .mark_line(point=True, strokeWidth=2)
+            .encode(
+                x=alt.X("anno:O", title="Anno"),
+                y=alt.Y("totale:Q", title="ESL (€)", axis=alt.Axis(format="~s")),
+                color=alt.Color("regime:N", title="Regime"),
+                tooltip=["anno", "regime", alt.Tooltip("totale:Q", format=",.0f")],
+            )
+            .properties(height=340)
+        )
+        st.altair_chart(chart_reg_trend, width="stretch")
+else:
+    st.info("Mart regimi non disponibile per l'anno selezionato.")
 
 st.markdown("---")
 

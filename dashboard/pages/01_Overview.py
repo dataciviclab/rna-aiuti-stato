@@ -9,6 +9,7 @@ from sources import (
     MART_PROCEDIMENTO,
     MART_REGIONE,
     MART_STRUMENTO,
+    MART_TEMPORALE,
     MART_TIPO_BENEF,
     YEARS,
     SLUG,
@@ -94,6 +95,113 @@ chart_trend = (
     .properties(height=300)
 )
 st.altair_chart(chart_trend, width="stretch")
+
+st.markdown("---")
+
+# ── Tempo profondo: mensile × procedimento ────────────────────────────────
+
+st.subheader("📅 Ritmo mensile per procedimento")
+st.caption(
+    "Volume di concessioni mese per mese. Gli spike 2020-2021 e i picchi energetici "
+    "non si vedono dal solo trend annuale."
+)
+
+df_temp_all = load_mart_years(MART_TEMPORALE)
+if not df_temp_all.empty:
+    df_temp_all = df_temp_all.copy()
+    df_temp_all["periodo"] = (
+        df_temp_all["anno"].astype(str)
+        + "-"
+        + df_temp_all["mese"].astype(int).astype(str).str.zfill(2)
+    )
+
+    y0, y1 = int(YEARS[0]), int(YEARS[-1])
+    default_y0 = max(y0, y1 - 2)
+    range_mese = st.slider(
+        "Intervallo anni del grafico mensile",
+        min_value=y0,
+        max_value=y1,
+        value=(default_y0, y1),
+        key="overview_temp_range",
+    )
+    df_temp_rng = df_temp_all[
+        (df_temp_all["anno"] >= range_mese[0]) & (df_temp_all["anno"] <= range_mese[1])
+    ]
+    df_temp_agg = (
+        df_temp_rng.groupby(["periodo", "anno", "mese", "procedimento"], as_index=False)
+        .agg(totale=("totale_esl", "sum"), aiuti=("aiuti", "sum"))
+    )
+    n_mesi = int(df_temp_agg["periodo"].nunique())
+    periodi_ordinati = sorted(df_temp_agg["periodo"].unique().tolist())
+    label_every = 1 if n_mesi <= 18 else (2 if n_mesi <= 36 else 3)
+    tick_labels = periodi_ordinati[::label_every]
+    chart_temp = (
+        alt.Chart(df_temp_agg)
+        .mark_bar()
+        .encode(
+            x=alt.X(
+                "periodo:O",
+                title="Anno-mese",
+                sort=periodi_ordinati,
+                axis=alt.Axis(
+                    labelAngle=-60,
+                    labelOverlap=False,
+                    values=tick_labels,
+                ),
+            ),
+            y=alt.Y("totale:Q", title="ESL (€)", axis=alt.Axis(format="~s")),
+            color=alt.Color("procedimento:N", title="Procedimento"),
+            tooltip=[
+                alt.Tooltip("periodo:N", title="Periodo"),
+                alt.Tooltip("procedimento:N", title="Procedimento"),
+                alt.Tooltip("totale:Q", title="ESL", format=",.0f"),
+                alt.Tooltip("aiuti:Q", title="N. aiuti", format=",.0f"),
+            ],
+        )
+        .properties(height=340)
+    )
+    st.altair_chart(chart_temp, width="stretch")
+
+    col_m, col_p = st.columns(2)
+    with col_m:
+        st.subheader(f"Anno selezionato ({anno}) — solo valore")
+        df_mese = (
+            df_temp_all[df_temp_all["anno"] == anno]
+            .groupby("mese", as_index=False)
+            .agg(totale=("totale_esl", "sum"), aiuti=("aiuti", "sum"))
+        )
+        chart_mese = (
+            alt.Chart(df_mese)
+            .mark_line(point=True, color="#3b82f6", strokeWidth=2.5)
+            .encode(
+                x=alt.X("mese:O", title="Mese"),
+                y=alt.Y("totale:Q", title="ESL (€)", axis=alt.Axis(format="~s")),
+                tooltip=["mese", alt.Tooltip("totale:Q", format=",.0f"), "aiuti"],
+            )
+            .properties(height=260)
+        )
+        st.altair_chart(chart_mese, width="stretch")
+
+    with col_p:
+        st.subheader("Composizione procedimento nel tempo")
+        df_comp = (
+            df_temp_all.groupby(["anno", "procedimento"], as_index=False)
+            .agg(totale=("totale_esl", "sum"))
+        )
+        chart_comp = (
+            alt.Chart(df_comp)
+            .mark_area(opacity=0.75)
+            .encode(
+                x=alt.X("anno:O", title="Anno"),
+                y=alt.Y("totale:Q", title="ESL (€)", stack="normalize", axis=alt.Axis(format="%")),
+                color=alt.Color("procedimento:N", title="Procedimento"),
+                tooltip=["anno", "procedimento", alt.Tooltip("totale:Q", format=",.0f")],
+            )
+            .properties(height=260)
+        )
+        st.altair_chart(chart_comp, width="stretch")
+else:
+    st.info("Mart temporale non disponibile per gli anni selezionati.")
 
 st.markdown("---")
 

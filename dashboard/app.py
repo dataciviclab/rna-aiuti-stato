@@ -24,6 +24,7 @@ pages = {
     "Analisi": [
         st.Page("pages/02_Territorio.py", title="Territorio", icon="🗺️"),
         st.Page("pages/03_Policy.py", title="Policy & Strumenti", icon="📋"),
+        st.Page("pages/07_Chi_eroga.py", title="Chi eroga", icon="🏦"),
     ],
     "Esplora": [
         st.Page("pages/04_Cerca.py", title="Cerca beneficiario", icon="🔍"),
