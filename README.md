@@ -156,3 +156,11 @@ make test-dashboard  # py_compile pagine
 
 - **Dati**: CC BY 4.0 (MIMIT)
 - **Codice**: MIT
+
+### Termini d'uso dei dati
+
+I dati del Registro Nazionale Aiuti di Stato contengono informazioni personali
+(beneficiari,_CF). Sono utilizzabili **solo per finalità compatibili con il RNA**
+(trasparenza sugli aiuti di Stato), nel rispetto del **GDPR (Reg. UE 2016/679)**
+e del **d.lgs. 196/2003**. Qualsiasi uso diverso dalla consultazione e
+dall'analisi pubblica sugli aiuti di Stato è fuori perimetro.
