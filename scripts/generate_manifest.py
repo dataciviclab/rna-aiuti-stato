@@ -24,11 +24,17 @@ MANIFEST_DIR = Path("data/derived/manifests")
 
 
 def _source_months_for_year(year: int) -> int:
-    """Quanti mesi la fonte RNA ha pubblicato per quest'anno."""
-    if year < 2017 or year > 2026:
+    """Quanti mesi la fonte RNA ha pubblicato per quest'anno.
+
+    Anni passati: 12 mesi pieni. Anno corrente: fino al mese corrente
+    (la fonte ha ~1 mese di ritardo, quindi è un upper bound — i 404
+    dei mesi non ancora pubblicati sono gestiti da full_batch).
+    """
+    now = datetime.now(timezone.utc)
+    if year < 2017 or year > now.year:
         return 0
-    if year == 2026:
-        return 6  # fermo a giugno 2026
+    if year == now.year:
+        return now.month
     return 12
 
 
