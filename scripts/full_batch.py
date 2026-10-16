@@ -9,7 +9,7 @@ Uso:
     # Periodo specifico (default 2 worker)
     python3 scripts/full_batch.py --from 2023 --to 2025
 
-    # Full (tutti i 133 file)
+    # Full (tutti i file della fonte)
     python3 scripts/full_batch.py --full
 
     # Summary
@@ -26,6 +26,7 @@ import logging
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import datetime, timezone
 from pathlib import Path
 
 import lxml.etree as ET
@@ -52,23 +53,33 @@ NS = "{http://www.rna.it/RNA_aiuto/schema}"
 MISURA_NS = "{http://www.rna.it/RNA_misura/schema}"
 TAG_AIUTO = f"{NS}AIUTO"
 TAG_MISURA = f"{MISURA_NS}MISURA"
+
+
+class MonthNotPublished(Exception):
+    """Il file mensile non è ancora pubblicato dalla fonte (HTTP 404)."""
+
+
 USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
 MAX_RETRIES = 5
 RETRY_DELAY = 10  # secondi
 
-# URL Aiuti (2017-01 → 2026-06)
+# URL Aiuti — generati dinamicamente fino al mese corrente.
+# La fonte pubblica con ~1 mesi di ritardo; i 404 dei mesi non ancora
+# pubblicati vengono skippati (vedi _download_with_retry).
+_NOW = datetime.now(timezone.utc)
 RNA_URLS = [
     f"https://www.rna.gov.it/sites/rna.mise.gov.it/files/opendata/OpenData_Aiuti_{y:04d}_{m:02d}.xml"
-    for y in range(2017, 2027)
+    for y in range(2017, _NOW.year + 1)
     for m in range(1, 13)
-    if not (y == 2026 and m > 6)
+    if (y, m) <= (_NOW.year, _NOW.month)
 ]
 
-# URL Misure (1994-01 → 2027-12)
+# URL Misure (1994-01 → anno corrente, stesso reasoning)
 MISURA_URLS = [
     f"https://www.rna.gov.it/sites/rna.mise.gov.it/files/opendata/OpenData_Misura_{y:04d}_{m:02d}.xml"
-    for y in range(1994, 2028)
+    for y in range(1994, _NOW.year + 1)
     for m in range(1, 13)
+    if (y, m) <= (_NOW.year, _NOW.month)
 ]
 
 
@@ -87,7 +98,7 @@ def _download_with_retry(url: str) -> object:
             return XMLCharFilter(resp)
         except urllib.error.HTTPError as e:
             if e.code == 404:
-                raise  # 404 non è recuperabile, fallisce subito
+                raise MonthNotPublished(url) from e
             last_error = e
         except (urllib.error.URLError, OSError) as e:
             last_error = e
@@ -203,7 +214,7 @@ def process_misura_url(url: str) -> dict:
 
 
 def _run_misure(args):
-    """Batch Misure RNA (408 file, 1994-2027)."""
+    """Batch Misure RNA (file mensili dalla fonte, 1994 → anno corrente)."""
     out_dir = Path(args.out if args.out != "data/derived/rna" else "data/derived/misure")
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -233,6 +244,8 @@ def _run_misure(args):
                     all_rows.extend(rows)
                     total_rows += len(rows)
                 done += 1
+            except MonthNotPublished:
+                logger.info("  ○ %s: non ancora pubblicato — skip", fname)
             except Exception as e:
                 logger.error("  ✗ %s: %s", fname, e)
                 failed += 1
@@ -271,16 +284,16 @@ def main():
     parser = argparse.ArgumentParser(description="RNA batch parallelo")
     parser.add_argument("--from", dest="from_year", type=int, default=2017,
                         help="Anno iniziale (default: 2017)")
-    parser.add_argument("--to", dest="to_year", type=int, default=2026,
-                        help="Anno finale (default: 2026)")
+    parser.add_argument("--to", dest="to_year", type=int, default=_NOW.year,
+                        help=f"Anno finale (default: {_NOW.year})")
     parser.add_argument("--workers", type=int, default=4,
                         help="Worker paralleli (default: 4, picco RAM < 500 MB)")
     parser.add_argument("--full", action="store_true",
-                        help="Processa tutti i 133 file (override --from/--to)")
+                        help="Processa tutti i file dalla fonte (override --from/--to)")
     parser.add_argument("-o", "--out", type=str, default="data/derived/rna",
                         help="Directory output parquet (default: data/derived/rna)")
     parser.add_argument("--misure", action="store_true",
-                        help="Processa le Misure (408 file, 1994-2027)")
+                        help="Processa le Misure (file mensili dalla fonte, 1994 → anno corrente)")
     parser.add_argument("--summary", action="store_true",
                         help="Mostra riepilogo dei parquet nella directory output")
     args = parser.parse_args()
@@ -303,7 +316,7 @@ def main():
     # Seleziona URL
     if args.full:
         urls = RNA_URLS
-        label = "TUTTI 133 file"
+        label = f"TUTTI {len(RNA_URLS)} file"
     else:
         urls = build_url_list(args.from_year, args.to_year)
         label = f"{len(urls)} file ({args.from_year}-{args.to_year})"
@@ -344,6 +357,8 @@ def main():
                 n = fut.result()
                 total_rows += n
                 done += 1
+            except MonthNotPublished:
+                logger.info("  ○ %s: non ancora pubblicato — skip", fname)
             except Exception as e:
                 logger.error("  ✗ %s: %s", fname, e)
                 failed += 1
