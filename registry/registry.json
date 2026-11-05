@@ -2,7 +2,7 @@
   "schema_version": 1,
   "repo": "rna-aiuti-stato",
   "source_repo": "dataciviclab/rna-aiuti-stato",
-  "updated_at": "2026-10-16",
+  "updated_at": "2026-11-05",
   "datasets": [
     {
       "slug": "rna_aiuti_stato",
@@ -395,8 +395,8 @@
       "table": "mart_aiuti_concedenti",
       "location": {
         "type": "gcs",
-        "path": "gs://dataciviclab-mart/rna_aiuti_stato/2026/mart_aiuti_concedenti.parquet",
-        "multi_file": false
+        "path": "gs://dataciviclab-mart/rna_aiuti_stato/*/mart_aiuti_concedenti.parquet",
+        "multi_file": true
       }
     },
     {
@@ -405,8 +405,8 @@
       "table": "mart_aiuti_concentrazione",
       "location": {
         "type": "gcs",
-        "path": "gs://dataciviclab-mart/rna_aiuti_stato/2026/mart_aiuti_concentrazione.parquet",
-        "multi_file": false
+        "path": "gs://dataciviclab-mart/rna_aiuti_stato/*/mart_aiuti_concentrazione.parquet",
+        "multi_file": true
       }
     },
     {
@@ -415,8 +415,8 @@
       "table": "mart_aiuti_limiti",
       "location": {
         "type": "gcs",
-        "path": "gs://dataciviclab-mart/rna_aiuti_stato/2026/mart_aiuti_limiti.parquet",
-        "multi_file": false
+        "path": "gs://dataciviclab-mart/rna_aiuti_stato/*/mart_aiuti_limiti.parquet",
+        "multi_file": true
       }
     },
     {
@@ -425,8 +425,8 @@
       "table": "mart_aiuti_per_misura",
       "location": {
         "type": "gcs",
-        "path": "gs://dataciviclab-mart/rna_aiuti_stato/2026/mart_aiuti_per_misura.parquet",
-        "multi_file": false
+        "path": "gs://dataciviclab-mart/rna_aiuti_stato/*/mart_aiuti_per_misura.parquet",
+        "multi_file": true
       }
     },
     {
@@ -435,8 +435,8 @@
       "table": "mart_aiuti_per_obiettivo",
       "location": {
         "type": "gcs",
-        "path": "gs://dataciviclab-mart/rna_aiuti_stato/2026/mart_aiuti_per_obiettivo.parquet",
-        "multi_file": false
+        "path": "gs://dataciviclab-mart/rna_aiuti_stato/*/mart_aiuti_per_obiettivo.parquet",
+        "multi_file": true
       }
     },
     {
@@ -445,8 +445,8 @@
       "table": "mart_aiuti_per_procedimento",
       "location": {
         "type": "gcs",
-        "path": "gs://dataciviclab-mart/rna_aiuti_stato/2026/mart_aiuti_per_procedimento.parquet",
-        "multi_file": false
+        "path": "gs://dataciviclab-mart/rna_aiuti_stato/*/mart_aiuti_per_procedimento.parquet",
+        "multi_file": true
       }
     },
     {
@@ -455,8 +455,8 @@
       "table": "mart_aiuti_per_regione",
       "location": {
         "type": "gcs",
-        "path": "gs://dataciviclab-mart/rna_aiuti_stato/2026/mart_aiuti_per_regione.parquet",
-        "multi_file": false
+        "path": "gs://dataciviclab-mart/rna_aiuti_stato/*/mart_aiuti_per_regione.parquet",
+        "multi_file": true
       }
     },
     {
@@ -465,8 +465,8 @@
       "table": "mart_aiuti_per_strumento",
       "location": {
         "type": "gcs",
-        "path": "gs://dataciviclab-mart/rna_aiuti_stato/2026/mart_aiuti_per_strumento.parquet",
-        "multi_file": false
+        "path": "gs://dataciviclab-mart/rna_aiuti_stato/*/mart_aiuti_per_strumento.parquet",
+        "multi_file": true
       }
     },
     {
@@ -475,8 +475,8 @@
       "table": "mart_aiuti_regimi",
       "location": {
         "type": "gcs",
-        "path": "gs://dataciviclab-mart/rna_aiuti_stato/2026/mart_aiuti_regimi.parquet",
-        "multi_file": false
+        "path": "gs://dataciviclab-mart/rna_aiuti_stato/*/mart_aiuti_regimi.parquet",
+        "multi_file": true
       }
     },
     {
@@ -485,8 +485,8 @@
       "table": "mart_aiuti_settore_regione",
       "location": {
         "type": "gcs",
-        "path": "gs://dataciviclab-mart/rna_aiuti_stato/2026/mart_aiuti_settore_regione.parquet",
-        "multi_file": false
+        "path": "gs://dataciviclab-mart/rna_aiuti_stato/*/mart_aiuti_settore_regione.parquet",
+        "multi_file": true
       }
     },
     {
@@ -495,8 +495,8 @@
       "table": "mart_aiuti_temporale",
       "location": {
         "type": "gcs",
-        "path": "gs://dataciviclab-mart/rna_aiuti_stato/2026/mart_aiuti_temporale.parquet",
-        "multi_file": false
+        "path": "gs://dataciviclab-mart/rna_aiuti_stato/*/mart_aiuti_temporale.parquet",
+        "multi_file": true
       }
     },
     {
@@ -505,8 +505,8 @@
       "table": "mart_aiuti_tipo_beneficiario",
       "location": {
         "type": "gcs",
-        "path": "gs://dataciviclab-mart/rna_aiuti_stato/2026/mart_aiuti_tipo_beneficiario.parquet",
-        "multi_file": false
+        "path": "gs://dataciviclab-mart/rna_aiuti_stato/*/mart_aiuti_tipo_beneficiario.parquet",
+        "multi_file": true
       }
     },
     {
@@ -515,8 +515,8 @@
       "table": "mart_aiuti_top_beneficiari",
       "location": {
         "type": "gcs",
-        "path": "gs://dataciviclab-mart/rna_aiuti_stato/2026/mart_aiuti_top_beneficiari.parquet",
-        "multi_file": false
+        "path": "gs://dataciviclab-mart/rna_aiuti_stato/*/mart_aiuti_top_beneficiari.parquet",
+        "multi_file": true
       }
     },
     {
@@ -559,7 +559,7 @@
       "detail": "anni 2017-2026 — mart: si",
       "action": "",
       "run": {
-        "run_id": "20261016T184317Z_a2149199",
+        "run_id": "20261105T180622Z_1d64359f",
         "year": 2026,
         "status": "SUCCESS",
         "quality_score": {
@@ -568,17 +568,17 @@
           "mart": 100
         },
         "output_rows": {
-          "clean": 831819,
-          "mart": 4245
+          "clean": 1001955,
+          "mart": 4363
         },
         "output_bytes": {
-          "raw": 39643055,
-          "clean": 36057469,
-          "mart": 132677
+          "raw": 55483986,
+          "clean": 43132507,
+          "mart": 135494
         },
-        "started_at": "2026-10-16T18:43:17.178113+00:00",
-        "finished_at": "2026-10-16T18:43:25.957215+00:00",
-        "duration_seconds": 8.779
+        "started_at": "2026-11-05T18:06:22.725068+00:00",
+        "finished_at": "2026-11-05T18:06:34.488992+00:00",
+        "duration_seconds": 11.764
       }
     },
     {
@@ -589,7 +589,7 @@
       "detail": "anno 2027 — mart: si",
       "action": "",
       "run": {
-        "run_id": "20261016T184326Z_9dee921f",
+        "run_id": "20261105T180635Z_57aa7e34",
         "year": 2027,
         "status": "SUCCESS",
         "quality_score": {
@@ -598,17 +598,17 @@
           "mart": 100
         },
         "output_rows": {
-          "clean": 20914,
-          "mart": 20946
+          "clean": 21030,
+          "mart": 21063
         },
         "output_bytes": {
-          "raw": 2215179,
-          "clean": 1947792,
-          "mart": 922962
+          "raw": 2228467,
+          "clean": 1958240,
+          "mart": 928687
         },
-        "started_at": "2026-10-16T18:43:26.678829+00:00",
-        "finished_at": "2026-10-16T18:43:27.200218+00:00",
-        "duration_seconds": 0.521
+        "started_at": "2026-11-05T18:06:35.384520+00:00",
+        "finished_at": "2026-11-05T18:06:35.850522+00:00",
+        "duration_seconds": 0.466
       }
     }
   ],
