@@ -35,7 +35,6 @@ from pathlib import Path
 import lxml.etree as ET
 import urllib.request
 
-import pyarrow as pa
 import pyarrow.parquet as pq
 
 from rna_aiuti.parser import (
@@ -386,19 +385,6 @@ def _run_misure(args):
         logger.error("  ✗ %d file falliti — parquet incompleti, esco con errore", failed)
         sys.exit(1)
 
-    # Genera manifest (come per gli Aiuti)
-    logger.info("")
-    logger.info("Generazione manifest ...")
-    ret = __import__("subprocess").run(
-        [sys.executable, "scripts/generate_manifest.py", "--misure", str(out_dir)],
-        capture_output=True, text=True,
-    )
-    for line in ret.stdout.strip().split("\n"):
-        if line.strip():
-            logger.info("  %s", line)
-    if ret.returncode != 0:
-        logger.error("  generate_manifest fallito: %s", ret.stderr[:500])
-
 
 def main():
     parser = argparse.ArgumentParser(description="RNA batch parallelo")
@@ -493,10 +479,25 @@ def main():
         parts = sorted(tmp_dir.glob(f"rna_{y}_*.parquet"))
         if not parts:
             continue
-        tbl = pa.concat_tables([pq.read_table(str(p)) for p in parts])
         out_path = out_dir / f"rna_{y}.parquet"
-        pq.write_table(tbl, str(out_path), compression="zstd")
-        logger.info("  → rna_%d.parquet: %d righe (da %d parti)", y, tbl.num_rows, len(parts))
+        # Merge in streaming (una parte alla volta): i parquet RNA si gonfiano
+        # ~30x in memoria, e un concat_tables sull'anno più grande supera gli
+        # 8 GB di picco. ParquetWriter tiene in RAM una sola parte.
+        rows = 0
+        writer = None
+        try:
+            for p in parts:
+                part_tbl = pq.read_table(str(p))
+                if writer is None:
+                    writer = pq.ParquetWriter(
+                        str(out_path), part_tbl.schema, compression="zstd"
+                    )
+                writer.write_table(part_tbl)
+                rows += part_tbl.num_rows
+        finally:
+            if writer is not None:
+                writer.close()
+        logger.info("  → rna_%d.parquet: %d righe (da %d parti)", y, rows, len(parts))
         for p in parts:
             p.unlink()
 
@@ -518,20 +519,6 @@ def main():
         logger.error("")
         logger.error("  ✗ %d file falliti — parquet incompleti, esco con errore", failed)
         sys.exit(1)
-
-    # Aggiorna manifest annuali
-    logger.info("")
-    logger.info("Generazione manifest ...")
-    import subprocess
-    ret = subprocess.run(
-        [sys.executable, "scripts/generate_manifest.py", str(out_dir)],
-        capture_output=True, text=True,
-    )
-    for line in ret.stdout.strip().split("\n"):
-        if line.strip():
-            logger.info("  %s", line)
-    if ret.returncode != 0:
-        logger.error("  generate_manifest fallito: %s", ret.stderr[:500])
 
 
 if __name__ == "__main__":

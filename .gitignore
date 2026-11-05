@@ -1,10 +1,8 @@
 # Dati raw (XML) — troppi grandi, solo streaming
 data/raw/*.xml
 
-# Parquet derivati — generati, non in git (eccetto manifest)
+# Parquet derivati — generati, non in git
 data/derived/*
-!data/derived/manifests/
-!data/derived/manifests/*.json
 
 # Output toolkit (raw/clean/mart locali + run records)
 out/
