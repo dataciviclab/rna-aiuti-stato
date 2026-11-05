@@ -30,6 +30,9 @@ jobs:
   smoke:
     runs-on: ubuntu-latest
     timeout-minutes: 350
+    # La fonte blocca gli IP dei runner GitHub (connect timeout): instrada via proxy.
+    env:
+      BLOCKED_SOURCE_PROXY: ${{ vars.BLOCKED_SOURCE_PROXY }}
     steps:
       - uses: actions/checkout@v7
 

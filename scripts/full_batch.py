@@ -24,6 +24,7 @@ from __future__ import annotations
 import argparse
 import io
 import logging
+import os
 import sys
 import time
 import zipfile
@@ -152,6 +153,28 @@ def _with_retry(url: str, fetch):
     raise last_error  # type: ignore
 
 
+_proxy_logged = False
+
+
+def _opener() -> urllib.request.OpenerDirector:
+    """Opener urllib; instrada via ``BLOCKED_SOURCE_PROXY`` se configurato.
+
+    Alcune fonti bloccano gli IP dei runner GitHub con un **connect timeout**
+    (non un 403): quando la variabile d'ambiente ``BLOCKED_SOURCE_PROXY`` è
+    impostata, tutte le richieste passano da quel proxy.
+    """
+    global _proxy_logged
+    proxy = os.environ.get("BLOCKED_SOURCE_PROXY")
+    if proxy:
+        if not _proxy_logged:
+            logger.info("  ⓘ proxy BLOCKED_SOURCE_PROXY attivo: %s", proxy)
+            _proxy_logged = True
+        return urllib.request.build_opener(
+            urllib.request.ProxyHandler({"http": proxy, "https": proxy})
+        )
+    return urllib.request.build_opener()
+
+
 def _open_xml(url: str):
     """Apre l'XML diretto in streaming (fallback), con retry."""
     def fetch():
@@ -159,7 +182,7 @@ def _open_xml(url: str):
             "User-Agent": USER_AGENT,
             "Accept": "application/xml, text/xml, */*",
         })
-        return urllib.request.urlopen(req, timeout=600)
+        return _opener().open(req, timeout=600)
 
     return XMLCharFilter(_with_retry(url, fetch))
 
@@ -181,7 +204,7 @@ def _download_with_retry(url: str):
             "User-Agent": USER_AGENT,
             "Accept": "application/zip, */*",
         })
-        with urllib.request.urlopen(req, timeout=600) as resp:
+        with _opener().open(req, timeout=600) as resp:
             return resp.read()
 
     try:
