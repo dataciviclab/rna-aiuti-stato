@@ -14,7 +14,7 @@ Ora è tutto in formato aperto e interrogabile.
 | **Periodo** | 2017-2026 | 1994-2027 |
 | **Righe** | **16.974.895** | 12.874 |
 | **Ammontare** | ~480 miliardi di EUR | — |
-| **Compressione** | 40 GB XML → 700 MB (58:1) | — |
+| **Download** | 1,6 GB ZIP (~51 GB XML) → 700 MB parquet | — |
 
 **Aiuti**: ogni euro pubblico dato alle imprese — beneficiario, importo, concedente,
 settore, regione, CUP.
@@ -105,8 +105,10 @@ rna-aiuti-stato/
 
 **Due fasi**:
 
-1. **Raw** — `full_batch.py` streamma e parsa l'XML RNA.gov.it → parquet in
-   `data/derived/` (mai un XML su disco, 4 worker, RAM < 500 MB).
+1. **Raw** — `full_batch.py` scarica lo **ZIP** mensile della fonte (fallback
+   XML) e lo streamma → parquet in `data/derived/` (mai l'XML su disco, 4
+   worker, RAM < 500 MB). Lo ZIP è ~30× più piccolo, più affidabile dove
+   l'XML risponde 500, e il suo CRC-32 intercetta i troncamenti.
 2. **Clean + mart** — il toolkit legge i parquet locali come `local_file` e
    produce i parquet standardizzati + tabelle mart. Solo clean e mart vengono
    pubblicati su GCS; il raw resta locale.
