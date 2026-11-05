@@ -386,19 +386,6 @@ def _run_misure(args):
         logger.error("  ✗ %d file falliti — parquet incompleti, esco con errore", failed)
         sys.exit(1)
 
-    # Genera manifest (come per gli Aiuti)
-    logger.info("")
-    logger.info("Generazione manifest ...")
-    ret = __import__("subprocess").run(
-        [sys.executable, "scripts/generate_manifest.py", "--misure", str(out_dir)],
-        capture_output=True, text=True,
-    )
-    for line in ret.stdout.strip().split("\n"):
-        if line.strip():
-            logger.info("  %s", line)
-    if ret.returncode != 0:
-        logger.error("  generate_manifest fallito: %s", ret.stderr[:500])
-
 
 def main():
     parser = argparse.ArgumentParser(description="RNA batch parallelo")
@@ -518,20 +505,6 @@ def main():
         logger.error("")
         logger.error("  ✗ %d file falliti — parquet incompleti, esco con errore", failed)
         sys.exit(1)
-
-    # Aggiorna manifest annuali
-    logger.info("")
-    logger.info("Generazione manifest ...")
-    import subprocess
-    ret = subprocess.run(
-        [sys.executable, "scripts/generate_manifest.py", str(out_dir)],
-        capture_output=True, text=True,
-    )
-    for line in ret.stdout.strip().split("\n"):
-        if line.strip():
-            logger.info("  %s", line)
-    if ret.returncode != 0:
-        logger.error("  generate_manifest fallito: %s", ret.stderr[:500])
 
 
 if __name__ == "__main__":

@@ -3,6 +3,14 @@ PYTHON ?= python3
 # nessun wrapper duckdb necessario (decisione cross-repo, vedi open-conto-annuale).
 TOOLKIT = $(PYTHON) -m toolkit.cli.app
 
+# --- Estrazione raw (ZIP della fonte → parquet) ---
+# Runner effimero: si rigenera tutta la storia a ogni run (`--full`).
+
+.PHONY: raw
+raw:
+	$(PYTHON) scripts/full_batch.py --full --workers 4 -o data/derived/rna
+	$(PYTHON) scripts/full_batch.py --misure --workers 4
+
 # --- Dataset principali ---
 
 .PHONY: run-aiuti run-misure run-all

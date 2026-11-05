@@ -42,7 +42,7 @@ interrogabili con gli strumenti del toolkit del Lab: `toolkit_find`,
 ### 2. Via DuckDB diretto
 
 ```bash
-wget https://storage.googleapis.com/dataciviclab-clean/rna_aiuti_stato/2025/rna_aiuti_stato_2025_clean.parquet
+wget https://storage.googleapis.com/dataciviclab-clean/rna-aiuti-stato/rna_aiuti_stato/2025/rna_aiuti_stato_2025_clean.parquet
 duckdb -c "SELECT regione_beneficiario,
            ROUND(SUM(elemento_aiuto), 0) AS totale
            FROM 'rna_aiuti_stato_2025_clean.parquet'
@@ -54,10 +54,10 @@ duckdb -c "SELECT regione_beneficiario,
 
 Clean e mart pubblicati su GCS (layout year):
 
-- `gs://dataciviclab-clean/rna_aiuti_stato/{year}/`
-- `gs://dataciviclab-mart/rna_aiuti_stato/{year}/`
-- `gs://dataciviclab-clean/rna_misure/`
-- `gs://dataciviclab-mart/rna_misure/`
+- `gs://dataciviclab-clean/rna-aiuti-stato/rna_aiuti_stato/{year}/`
+- `gs://dataciviclab-mart/rna-aiuti-stato/rna_aiuti_stato/{year}/`
+- `gs://dataciviclab-clean/rna-aiuti-stato/rna_misure/{year}/`
+- `gs://dataciviclab-mart/rna-aiuti-stato/rna_misure/{year}/`
 
 ## Approfondimenti
 
