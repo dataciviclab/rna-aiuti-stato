@@ -36,4 +36,4 @@ Il Registro Nazionale Aiuti di Stato (RNA) è il registro istituito presso il MI
 
 ## Aggiornamento
 
-I file XML vengono pubblicati mensilmente sul portale **Incentivi Italia** (MIMIT): <https://www.incentivitalia.gov.it/open-data>. Dal 2026 il vecchio dominio `www.rna.gov.it` reindirizza qui restituendo HTML, non XML: usare sempre gli URL `https://www.incentivitalia.gov.it/open-data/{aiuti,misura}/OpenData_*.xml`. Il batch di estrazione può essere rilanciato periodicamente per includere i nuovi mesi.
+I file XML vengono pubblicati mensilmente sul portale **Incentivi Italia** (MIMIT): <https://www.incentivitalia.gov.it/open-data>. Dal 2026 il vecchio dominio `www.rna.gov.it` reindirizza qui restituendo HTML, non XML: usare sempre gli URL `https://www.incentivitalia.gov.it/open-data/{aiuti,misura}/OpenData_*.xml`. Lo scarico preferisce lo **ZIP** (`OpenData_*.zip`, stesso nome base, ~30× più piccolo e affidabile dove l'XML risponde 500), con fallback all'XML. Il batch di estrazione può essere rilanciato periodicamente per includere i nuovi mesi.

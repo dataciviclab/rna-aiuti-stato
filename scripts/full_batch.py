@@ -22,9 +22,11 @@ Uso:
 from __future__ import annotations
 
 import argparse
+import io
 import logging
 import sys
 import time
+import zipfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from pathlib import Path
@@ -91,19 +93,52 @@ MISURA_URLS = [
 ]
 
 
-def _download_with_retry(url: str) -> object:
-    """Download con retry e backoff. Restituisce file-like object (XML filtrato)."""
+def _zip_url(xml_url: str) -> str:
+    """Deriva l'URL dello ZIP dall'URL XML (stesso path, estensione .zip)."""
+    if not xml_url.endswith(".xml"):
+        raise ValueError(f"URL XML atteso, ricevuto: {xml_url}")
+    return xml_url[:-4] + ".zip"
+
+
+class _ZipMemberStream:
+    """Stream del membro XML di uno ZIP.
+
+    ``zipfile`` richiede un file seekable: lo ZIP va scaricato interamente
+    (~0,1–40 MB, contro i 0,4–1,7 GB dell'XML). Questa classe tiene vivi
+    buffer, ``ZipFile`` e stream per tutta la durata dell'``iterparse``.
+    """
+
+    def __init__(self, blob: bytes):
+        self._bio = io.BytesIO(blob)
+        self._zip = zipfile.ZipFile(self._bio)
+        members = [n for n in self._zip.namelist() if n.lower().endswith(".xml")]
+        if not members:
+            raise zipfile.BadZipFile("nessun membro .xml nello ZIP")
+        self._stream = self._zip.open(members[0])
+
+    def read(self, n: int = -1) -> bytes:
+        return self._stream.read(n)
+
+    def readinto(self, b) -> int:
+        data = self.read(len(b))
+        n = len(data)
+        b[:n] = data
+        return n
+
+    def close(self) -> None:
+        self._stream.close()
+        self._zip.close()
+        self._bio.close()
+
+
+def _with_retry(url: str, fetch):
+    """Esegue ``fetch`` con retry/backoff. HTTP 404 → MonthNotPublished."""
     import urllib.error
 
     last_error = None
     for attempt in range(1, MAX_RETRIES + 1):
         try:
-            req = urllib.request.Request(url, headers={
-                "User-Agent": USER_AGENT,
-                "Accept": "application/xml, text/xml, */*",
-            })
-            resp = urllib.request.urlopen(req, timeout=600)
-            return XMLCharFilter(resp)
+            return fetch()
         except urllib.error.HTTPError as e:
             if e.code == 404:
                 raise MonthNotPublished(url) from e
@@ -115,6 +150,55 @@ def _download_with_retry(url: str) -> object:
         if attempt < MAX_RETRIES:
             time.sleep(RETRY_DELAY * attempt)
     raise last_error  # type: ignore
+
+
+def _open_xml(url: str):
+    """Apre l'XML diretto in streaming (fallback), con retry."""
+    def fetch():
+        req = urllib.request.Request(url, headers={
+            "User-Agent": USER_AGENT,
+            "Accept": "application/xml, text/xml, */*",
+        })
+        return urllib.request.urlopen(req, timeout=600)
+
+    return XMLCharFilter(_with_retry(url, fetch))
+
+
+def _download_with_retry(url: str):
+    """Stream XML della fonte: preferisce lo ZIP, fallback all'XML diretto.
+
+    Lo ZIP è ~30x più piccolo (1,6 GB vs ~51 GB sullo storico), è servito in
+    modo affidabile dove l'XML diretto risponde 500, e il CRC-32 rileva i
+    troncamenti che ``recover=True`` maschererebbe. ZIP e XML hanno la stessa
+    disponibilità mensile, quindi un 404 dello ZIP significa mese non
+    pubblicato. Se lo ZIP non è disponibile o è illeggibile, si ricade
+    sull'XML diretto.
+    """
+    zip_url = _zip_url(url)
+
+    def fetch_zip() -> bytes:
+        req = urllib.request.Request(zip_url, headers={
+            "User-Agent": USER_AGENT,
+            "Accept": "application/zip, */*",
+        })
+        with urllib.request.urlopen(req, timeout=600) as resp:
+            return resp.read()
+
+    try:
+        blob = _with_retry(zip_url, fetch_zip)
+    except MonthNotPublished:
+        raise
+    except Exception as e:  # ZIP non disponibile → fallback XML
+        logger.warning("  ⚠ ZIP non disponibile (%s): %s — fallback XML",
+                       zip_url.split("/")[-1], e)
+        return _open_xml(url)
+
+    try:
+        return XMLCharFilter(_ZipMemberStream(blob))
+    except zipfile.BadZipFile as e:  # ZIP corrotto/troncato → fallback XML
+        logger.warning("  ⚠ ZIP illeggibile (%s): %s — fallback XML",
+                       zip_url.split("/")[-1], e)
+        return _open_xml(url)
 
 
 def process_url(url: str, tmp_dir: Path, chunk_size: int = 50000) -> int:
