@@ -12,6 +12,13 @@ on:
   schedule:
     - cron: "0 6 5 * *"
 
+# Un solo run per ref: schedule + dispatch non devono sovrapporsi (due rebuild
+# completi in parallelo = scritture concorrenti sullo stesso prefisso GCS e
+# due PR al registry).
+concurrency:
+  group: rna-pipeline-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   pipeline:
     uses: dataciviclab/.github/.github/workflows/pipeline-reusable.yml@main
