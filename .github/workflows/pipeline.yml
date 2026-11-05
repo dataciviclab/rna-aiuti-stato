@@ -1,15 +1,16 @@
 name: pipeline
+
+# Pipeline RNA — runner self-hosted `rna-arm64` (la VM che è anche il proxy
+# per la fonte). Il raw è incrementale: si rigenera solo l'anno corrente, gli
+# storici restano su data/derived (preservati da clean:false).
 on:
   workflow_dispatch:
     inputs:
       years:
-        description: "Anni aiuti (default=current: rigenera solo l'anno corrente da XML; il toolkit processa comunque tutti gli anni da data/derived)"
+        description: "Anni aiuti (default=current: rigenera solo l'anno corrente; il toolkit processa comunque tutti gli anni da data/derived)"
         required: false
         default: "current"
   schedule:
-    # Mensile: full_batch rigenera solo l'anno corrente (i parquet storici
-    # restano su data/derived, preservati da clean:false), poi il toolkit
-    # processa TUTTI gli anni presenti.
     - cron: "0 6 5 * *"
 
 concurrency:
@@ -29,8 +30,7 @@ jobs:
           fetch-depth: 0
           # clean:false — il default (clean:true) cancella i file gitignored
           # (data/derived/*) a ogni run. Gli storici 2017-N devono persistere
-          # sul runner: full_batch rigenera solo l'anno corrente, il toolkit
-          # processa TUTTI gli anni da data/derived.
+          # sul runner: full_batch rigenera solo l'anno corrente.
           clean: false
 
       - name: Configure git HTTPS auth
@@ -42,7 +42,21 @@ jobs:
         with:
           extra-packages: -e "."
 
-      # ── Genera parquet raw (XML → Parquet) ──────────────────────────────
+      # ── GCP auth SUBITO ─────────────────────────────────────────────────
+      # Il token OIDC di GitHub dura 5-10 min, ma il job ~14: se l'auth action
+      # si limita a scrivere il file credenziali, lo scambio OIDC avviene al
+      # primo uso (il sync, a fine job) e il token è già scaduto
+      # ("token has invalid claims: token is expired").
+      # Qui otteniamo subito un access token OAuth (1h) e lo usiamo alla fine.
+      - name: GCP Auth (WIF → access token 1h)
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_lifetime: 3600s
+
+      # ── Genera parquet raw (ZIP → Parquet) ──────────────────────────────
       - name: Configure years (full_batch)
         id: years
         run: |
@@ -70,24 +84,6 @@ jobs:
             echo "misure.parquet già presente — skip full_batch misure"
           fi
 
-      - name: Generate MANIFEST (aiuti)
-        run: python3 scripts/generate_manifest.py data/derived/rna data/derived/manifests
-
-      - name: Generate MANIFEST (misure)
-        run: python3 scripts/generate_manifest.py --misure data/derived/misure data/derived/manifests
-
-      - name: Commit manifest aggiornati
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/derived/manifests/
-          if git diff --cached --quiet; then
-            echo "Nessuna modifica ai manifest"
-          else
-            git commit -m "Aggiornamento manifest RNA"
-            git push
-          fi
-
       # ── Toolkit: clean + mart (raw = local_file su data/derived) ────────
       - name: Detect available years (aiuti)
         id: aiuti-years
@@ -109,22 +105,25 @@ jobs:
           toolkit run --config datasets/rna-misure/dataset.yml
 
       # ── Push ONLY clean + mart (raw è locale, non pubblicato) ───────────
-      - name: GCP Auth (WIF)
-        uses: google-github-actions/auth@v3
-        with:
-          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+      # Diagnostica: quale credenziale usa davvero il sync.
+      - name: Auth check (diagnostica)
+        run: |
+          gcloud auth list 2>&1 | sed -n '1,12p' || true
+          gsutil version -l 2>/dev/null | grep -iE "pass cloud sdk credentials|config path" || true
 
+      # NB: `gcloud storage`, NON `gsutil`. `gsutil` ignora l'access token
+      # esportato dall'auth action (usa il file ADC → scambio OIDC → scaduto);
+      # `gcloud storage` è il percorso documentato per l'access token.
       - name: Sync clean + mart to GCS
         run: |
           # Exclude run records (_run/) e metadata: solo parquet pubblici su GCS.
           for slug in rna_aiuti_stato rna_misure; do
             for year in $(ls "out/data/clean/$slug/" 2>/dev/null); do
-              gsutil -m rsync -r -x ".*/_(run|validate)/.*|.*/metadata\\.json$" \
+              gcloud storage rsync -r -x ".*/_(run|validate)/.*|.*/metadata\\.json$" \
                 "out/data/clean/$slug/$year/" "gs://dataciviclab-clean/$slug/$year/"
             done
             for year in $(ls "out/data/mart/$slug/" 2>/dev/null); do
-              gsutil -m rsync -r -x ".*/_(run|validate)/.*|.*/metadata\\.json$" \
+              gcloud storage rsync -r -x ".*/_(run|validate)/.*|.*/metadata\\.json$" \
                 "out/data/mart/$slug/$year/" "gs://dataciviclab-mart/$slug/$year/"
             done
           done
