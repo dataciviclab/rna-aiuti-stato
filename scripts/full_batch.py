@@ -63,23 +63,31 @@ USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Ge
 MAX_RETRIES = 5
 RETRY_DELAY = 10  # secondi
 
+# Base URL della fonte. Dal 2026 il portale è incentivitalia.gov.it (MIMIT):
+# il vecchio www.rna.gov.it reindirizza qui restituendo HTML, non XML.
+_AIUTI_BASE_URL = "https://www.incentivitalia.gov.it/open-data/aiuti"
+_MISURA_BASE_URL = "https://www.incentivitalia.gov.it/open-data/misura"
+
 # URL Aiuti — generati dinamicamente fino al mese corrente.
 # La fonte pubblica con ~1 mesi di ritardo; i 404 dei mesi non ancora
 # pubblicati vengono skippati (vedi _download_with_retry).
 _NOW = datetime.now(timezone.utc)
 RNA_URLS = [
-    f"https://www.rna.gov.it/sites/rna.mise.gov.it/files/opendata/OpenData_Aiuti_{y:04d}_{m:02d}.xml"
+    f"{_AIUTI_BASE_URL}/OpenData_Aiuti_{y:04d}_{m:02d}.xml"
     for y in range(2017, _NOW.year + 1)
     for m in range(1, 13)
     if (y, m) <= (_NOW.year, _NOW.month)
 ]
 
-# URL Misure (1994-01 → anno corrente, stesso reasoning)
+# URL Misure (1994-01 → anno successivo, tutti i mesi).
+# Le misure possono avere DATA_INIZIO futura: il portale pubblica file con
+# mese di start oltre l'anno corrente (es. OpenData_Misura_2027_12.xml).
+# Generiamo fino all'anno successivo; i mesi non ancora pubblicati tornano
+# 404 e vengono skippati (vedi MonthNotPublished).
 MISURA_URLS = [
-    f"https://www.rna.gov.it/sites/rna.mise.gov.it/files/opendata/OpenData_Misura_{y:04d}_{m:02d}.xml"
-    for y in range(1994, _NOW.year + 1)
+    f"{_MISURA_BASE_URL}/OpenData_Misura_{y:04d}_{m:02d}.xml"
+    for y in range(1994, _NOW.year + 2)
     for m in range(1, 13)
-    if (y, m) <= (_NOW.year, _NOW.month)
 ]
 
 
