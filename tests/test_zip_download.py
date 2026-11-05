@@ -71,6 +71,20 @@ def test_zip_member_stream_rejects_zip_without_xml():
         full_batch._ZipMemberStream(_make_zip(content=b"x", name="readme.txt"))
 
 
+@pytest.mark.contract
+def test_zip_member_stream_raises_on_corrupt_payload():
+    """Un membro corrotto (CRC) solleva BadZipFile in lettura, non in apertura.
+
+    Documenta il comportamento fail-loud: la corruzione a metà stream NON viene
+    accettata in silenzio; il file finisce in `failed` e (guardrail) la run è rossa.
+    """
+    blob = bytearray(_make_zip())
+    blob[len(blob) // 2] ^= 0xFF  # corrompe il payload, central directory intatta
+    stream = full_batch._ZipMemberStream(bytes(blob))
+    with pytest.raises(zipfile.BadZipFile):
+        stream.read()
+
+
 # ---------------------------------------------------------------------------
 # _download_with_retry: ZIP-first + fallback
 # ---------------------------------------------------------------------------
