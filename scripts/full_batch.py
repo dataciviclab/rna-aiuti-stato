@@ -35,6 +35,7 @@ from pathlib import Path
 import lxml.etree as ET
 import urllib.request
 
+import pyarrow as pa
 import pyarrow.parquet as pq
 
 from rna_aiuti.parser import (
@@ -47,7 +48,7 @@ from rna_aiuti.parser import (
     XMLTagFixer,
     summary as _summary,
 )
-from rna_aiuti.parser import MISURA_SCHEMA
+from rna_aiuti.parser import MISURA_SCHEMA, SCHEMA as AIUTI_SCHEMA
 
 logger = logging.getLogger("rna.batch")
 
@@ -483,6 +484,8 @@ def main():
         # Merge in streaming (una parte alla volta): i parquet RNA si gonfiano
         # ~30x in memoria, e un concat_tables sull'anno più grande supera gli
         # 8 GB di picco. ParquetWriter tiene in RAM una sola parte.
+        # Lo schema è quello canonico del parser (contratto esplicito).
+        canon_schema = pa.schema(AIUTI_SCHEMA)
         rows = 0
         writer = None
         try:
@@ -490,7 +493,7 @@ def main():
                 part_tbl = pq.read_table(str(p))
                 if writer is None:
                     writer = pq.ParquetWriter(
-                        str(out_path), part_tbl.schema, compression="zstd"
+                        str(out_path), canon_schema, compression="zstd"
                     )
                 writer.write_table(part_tbl)
                 rows += part_tbl.num_rows

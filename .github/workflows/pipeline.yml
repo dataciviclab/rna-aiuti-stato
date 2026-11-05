@@ -105,16 +105,25 @@ jobs:
           toolkit run --config datasets/rna-misure/dataset.yml
 
       # ── Push ONLY clean + mart (raw è locale, non pubblicato) ───────────
+      # Diagnostica: quale credenziale usa davvero il sync.
+      - name: Auth check (diagnostica)
+        run: |
+          gcloud auth list 2>&1 | sed -n '1,12p' || true
+          gsutil version -l 2>/dev/null | grep -iE "pass cloud sdk credentials|config path" || true
+
+      # NB: `gcloud storage`, NON `gsutil`. `gsutil` ignora l'access token
+      # esportato dall'auth action (usa il file ADC → scambio OIDC → scaduto);
+      # `gcloud storage` è il percorso documentato per l'access token.
       - name: Sync clean + mart to GCS
         run: |
           # Exclude run records (_run/) e metadata: solo parquet pubblici su GCS.
           for slug in rna_aiuti_stato rna_misure; do
             for year in $(ls "out/data/clean/$slug/" 2>/dev/null); do
-              gsutil -m rsync -r -x ".*/_(run|validate)/.*|.*/metadata\\.json$" \
+              gcloud storage rsync -r -x ".*/_(run|validate)/.*|.*/metadata\\.json$" \
                 "out/data/clean/$slug/$year/" "gs://dataciviclab-clean/$slug/$year/"
             done
             for year in $(ls "out/data/mart/$slug/" 2>/dev/null); do
-              gsutil -m rsync -r -x ".*/_(run|validate)/.*|.*/metadata\\.json$" \
+              gcloud storage rsync -r -x ".*/_(run|validate)/.*|.*/metadata\\.json$" \
                 "out/data/mart/$slug/$year/" "gs://dataciviclab-mart/$slug/$year/"
             done
           done
