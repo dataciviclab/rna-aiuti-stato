@@ -1,0 +1,99 @@
+name: smoke-runner
+
+# Smoke test su runner GitHub-hosted (ubuntu-latest): verifica che la pipeline
+# RNA (rebuild via ZIP) giri su runner standard, senza la VM self-hosted.
+#
+# NON pubblica nulla: nessun push su GCS, nessuna PR al registry.
+# Serve a misurare (a) raggiungibilità della fonte da runner GitHub, (b) durata.
+#
+# Uso:
+#   gh workflow run smoke-runner.yml -f years=2017,2018
+#   gh workflow run smoke-runner.yml -f years=full -f include_toolkit=true
+
+on:
+  workflow_dispatch:
+    inputs:
+      years:
+        description: "'full' oppure lista CSV di anni (es. 2017,2018)"
+        required: true
+        default: "2017,2018"
+      include_toolkit:
+        description: "Esegui anche il toolkit (clean + mart)"
+        type: boolean
+        default: false
+
+concurrency:
+  group: smoke-runner-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dataciviclab/.github/actions/python-setup@main
+        with:
+          extra-packages: -e "."
+
+      - name: Configura range anni
+        id: range
+        run: |
+          if [ "${{ inputs.years }}" = "full" ]; then
+            echo "args=--full" >> "$GITHUB_OUTPUT"
+            echo "years=2017,2018,2019,2020,2021,2022,2023,2024,2025,2026" >> "$GITHUB_OUTPUT"
+          else
+            IFS=',' read -ra YS <<< "${{ inputs.years }}"
+            echo "args=--from ${YS[0]} --to ${YS[-1]}" >> "$GITHUB_OUTPUT"
+            echo "years=${{ inputs.years }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Raw rebuild AIUTI (ZIP)
+        run: |
+          set -o pipefail
+          start=$(date +%s)
+          /usr/bin/time -v python3 scripts/full_batch.py \
+            ${{ steps.range.outputs.args }} --workers 4 2>&1 | tee /tmp/aiuti.log
+          echo "aiuti_s=$(( $(date +%s) - start ))" >> "$GITHUB_ENV"
+
+      - name: Raw rebuild MISURE (ZIP)
+        run: |
+          set -o pipefail
+          start=$(date +%s)
+          /usr/bin/time -v python3 scripts/full_batch.py --misure --workers 4 2>&1 | tee /tmp/misure.log
+          echo "misure_s=$(( $(date +%s) - start ))" >> "$GITHUB_ENV"
+
+      - name: Toolkit clean + mart
+        if: ${{ inputs.include_toolkit }}
+        run: |
+          set -o pipefail
+          start=$(date +%s)
+          toolkit run --config datasets/rna-aiuti-stato/dataset.yml \
+            --years "${{ steps.range.outputs.years }}"
+          toolkit run --config datasets/rna-misure/dataset.yml
+          echo "toolkit_s=$(( $(date +%s) - start ))" >> "$GITHUB_ENV"
+
+      - name: Riepilogo
+        if: always()
+        run: |
+          {
+            echo "## Smoke runner standard (ubuntu-latest)"
+            echo ""
+            echo "| | |"
+            echo "|---|---|"
+            echo "| anni | \`${{ inputs.years }}\` |"
+            echo "| toolkit | \`${{ inputs.include_toolkit }}\` |"
+            echo "| runner | \`${{ runner.os }} / ${{ runner.arch }}\` |"
+            echo "| AIUTI | ${aiuti_s:-n/d}s |"
+            echo "| MISURE | ${misure_s:-n/d}s |"
+            echo "| TOOLKIT | ${toolkit_s:-n/d}s |"
+            echo ""
+            echo '```'
+            du -sh data/derived/rna data/derived/misure 2>/dev/null || true
+            echo '--- AIUTI (coda log) ---'
+            tail -8 /tmp/aiuti.log 2>/dev/null || true
+            echo '--- risorse (AIUTI) ---'
+            grep -E "Maximum resident set size|Elapsed \(wall" /tmp/aiuti.log 2>/dev/null || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
