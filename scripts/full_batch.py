@@ -274,6 +274,11 @@ def _run_misure(args):
     total_mb = out_path.stat().st_size / 1_000_000 if out_path.exists() else 0
     logger.info("  Output: %s (%.1f MB)", out_dir, total_mb)
 
+    if failed:
+        logger.error("")
+        logger.error("  ✗ %d file falliti — parquet incompleti, esco con errore", failed)
+        sys.exit(1)
+
     # Genera manifest (come per gli Aiuti)
     logger.info("")
     logger.info("Generazione manifest ...")
@@ -398,6 +403,14 @@ def main():
     # Summary
     total_mb = sum(f.stat().st_size for f in out_dir.glob("rna_*.parquet")) / 1_000_000
     logger.info("  Output: %s (%.0f MB)", out_dir, total_mb)
+
+    # Un fallimento di download (es. HTTP 500 sui file grossi) lascia i
+    # parquet incompleti: la run ricostruisce gli anni da zero, quindi
+    # pubblicare in silenzio sarebbe peggio che fallire. Esci con errore.
+    if failed:
+        logger.error("")
+        logger.error("  ✗ %d file falliti — parquet incompleti, esco con errore", failed)
+        sys.exit(1)
 
     # Aggiorna manifest annuali
     logger.info("")

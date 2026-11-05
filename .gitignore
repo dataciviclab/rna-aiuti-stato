@@ -3,7 +3,6 @@ data/raw/*.xml
 
 # Parquet derivati — generati, non in git (eccetto manifest)
 data/derived/*
-!data/derived/MANIFEST.json
 !data/derived/manifests/
 !data/derived/manifests/*.json
 
