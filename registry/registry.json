@@ -2,7 +2,7 @@
   "schema_version": 1,
   "repo": "rna-aiuti-stato",
   "source_repo": "dataciviclab/rna-aiuti-stato",
-  "updated_at": "2026-11-05",
+  "updated_at": "2026-11-25",
   "datasets": [
     {
       "slug": "rna_aiuti_stato",
@@ -559,7 +559,7 @@
       "detail": "anni 2017-2026 — mart: si",
       "action": "",
       "run": {
-        "run_id": "20261105T205857Z_4f9c7733",
+        "run_id": "20261125T095325Z_e731cd30",
         "year": 2026,
         "status": "SUCCESS",
         "quality_score": {
@@ -568,17 +568,17 @@
           "mart": 100
         },
         "output_rows": {
-          "clean": 1001955,
-          "mart": 4363
+          "clean": 1341065,
+          "mart": 4418
         },
         "output_bytes": {
-          "raw": 55483986,
-          "clean": 43269210,
-          "mart": 135492
+          "raw": 70804751,
+          "clean": 55123215,
+          "mart": 137040
         },
-        "started_at": "2026-11-05T20:58:57.709809+00:00",
-        "finished_at": "2026-11-05T20:59:08.770596+00:00",
-        "duration_seconds": 11.061
+        "started_at": "2026-11-25T09:53:25.922139+00:00",
+        "finished_at": "2026-11-25T09:53:41.930618+00:00",
+        "duration_seconds": 16.008
       }
     },
     {
@@ -589,7 +589,7 @@
       "detail": "anno 2027 — mart: si",
       "action": "",
       "run": {
-        "run_id": "20261105T205909Z_b8e83be1",
+        "run_id": "20261125T095342Z_4bf9fd7a",
         "year": 2027,
         "status": "SUCCESS",
         "quality_score": {
@@ -598,17 +598,17 @@
           "mart": 100
         },
         "output_rows": {
-          "clean": 21030,
-          "mart": 21063
+          "clean": 21156,
+          "mart": 21189
         },
         "output_bytes": {
-          "raw": 2227648,
-          "clean": 1958987,
-          "mart": 927780
+          "raw": 2242505,
+          "clean": 1969547,
+          "mart": 933779
         },
-        "started_at": "2026-11-05T20:59:09.667337+00:00",
-        "finished_at": "2026-11-05T20:59:10.137177+00:00",
-        "duration_seconds": 0.47
+        "started_at": "2026-11-25T09:53:42.877480+00:00",
+        "finished_at": "2026-11-25T09:53:43.413702+00:00",
+        "duration_seconds": 0.536
       }
     }
   ],
