@@ -1,224 +1,201 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "repo": "rna-aiuti-stato",
   "source_repo": "dataciviclab/rna-aiuti-stato",
-  "updated_at": "2026-11-05",
+  "updated_at": "2026-11-25",
+  "gcs": {
+    "clean": "year"
+  },
   "datasets": [
     {
       "slug": "rna_aiuti_stato",
       "name": "Rna Aiuti Stato",
       "description": "Ogni aiuto pubblico concesso alle imprese italiane: beneficiario (CF e denominazione), soggetto concedente, importo, procedimento (De Minimis/notifica/esenzione), settore NACE, regione, CUP. Dati dal Registro Nazionale Aiuti di Stato (MIMIT), 2017-2026.",
-      "source": "",
       "source_id": "mimit_rna",
-      "period": {
-        "start": 2017,
-        "end": 2026
-      },
       "tags": [
         "finanza-pubblica",
         "rna",
         "aiuti"
       ],
       "category": "finanza-pubblica",
+      "period": {
+        "start": 2017,
+        "end": 2026
+      },
+      "partitions": {
+        "2017": 216933,
+        "2018": 696529,
+        "2019": 524509,
+        "2020": 2538138,
+        "2021": 2722248,
+        "2022": 2134540,
+        "2023": 2946545,
+        "2024": 2413137,
+        "2025": 2137462,
+        "2026": 1341065
+      },
       "columns": [
         {
           "name": "data_concessione",
           "type": "VARCHAR",
-          "role": "dimension",
-          "description": ""
+          "role": "dimension"
         },
         {
           "name": "car",
           "type": "VARCHAR",
-          "role": "dimension",
-          "description": ""
+          "role": "dimension"
         },
         {
           "name": "cor",
           "type": "VARCHAR",
-          "role": "dimension",
-          "description": ""
+          "role": "dimension"
         },
         {
           "name": "denominazione_beneficiario",
           "type": "VARCHAR",
-          "role": "dimension",
-          "description": ""
+          "role": "dimension"
         },
         {
           "name": "codice_fiscale_beneficiario",
           "type": "VARCHAR",
           "role": "dimension",
-          "description": "",
           "semantic_type": "fiscal_code"
         },
         {
           "name": "tipo_beneficiario",
           "type": "VARCHAR",
-          "role": "dimension",
-          "description": ""
+          "role": "dimension"
         },
         {
           "name": "regione_beneficiario",
           "type": "VARCHAR",
           "role": "dimension",
-          "description": "",
           "semantic_type": "region_code"
         },
         {
           "name": "soggetto_concedente",
           "type": "VARCHAR",
-          "role": "dimension",
-          "description": ""
+          "role": "dimension"
         },
         {
           "name": "titolo_misura",
           "type": "VARCHAR",
-          "role": "dimension",
-          "description": ""
+          "role": "dimension"
         },
         {
           "name": "des_tipo_misura",
           "type": "VARCHAR",
-          "role": "dimension",
-          "description": ""
+          "role": "dimension"
         },
         {
           "name": "titolo_progetto",
           "type": "VARCHAR",
-          "role": "dimension",
-          "description": ""
+          "role": "dimension"
         },
         {
           "name": "descrizione_progetto",
           "type": "VARCHAR",
-          "role": "dimension",
-          "description": ""
+          "role": "dimension"
         },
         {
           "name": "cup",
           "type": "VARCHAR",
           "role": "dimension",
-          "description": "",
           "semantic_type": "cup_code"
         },
         {
           "name": "atto_concessione",
           "type": "VARCHAR",
-          "role": "dimension",
-          "description": ""
+          "role": "dimension"
         },
         {
           "name": "base_giuridica_nazionale",
           "type": "VARCHAR",
-          "role": "dimension",
-          "description": ""
+          "role": "dimension"
         },
         {
           "name": "identificativo_ufficio",
           "type": "VARCHAR",
-          "role": "dimension",
-          "description": ""
+          "role": "dimension"
         },
         {
           "name": "link_trasparenza_nazionale",
           "type": "VARCHAR",
-          "role": "dimension",
-          "description": ""
+          "role": "dimension"
         },
         {
           "name": "id_componente",
           "type": "VARCHAR",
-          "role": "dimension",
-          "description": ""
+          "role": "dimension"
         },
         {
           "name": "procedimento",
           "type": "VARCHAR",
-          "role": "dimension",
-          "description": ""
+          "role": "dimension"
         },
         {
           "name": "cod_procedimento",
           "type": "VARCHAR",
-          "role": "dimension",
-          "description": ""
+          "role": "dimension"
         },
         {
           "name": "regolamento_ue",
           "type": "VARCHAR",
-          "role": "dimension",
-          "description": ""
+          "role": "dimension"
         },
         {
           "name": "cod_regolamento",
           "type": "VARCHAR",
-          "role": "dimension",
-          "description": ""
+          "role": "dimension"
         },
         {
           "name": "obiettivo",
           "type": "VARCHAR",
-          "role": "dimension",
-          "description": ""
+          "role": "dimension"
         },
         {
           "name": "cod_obiettivo",
           "type": "VARCHAR",
-          "role": "dimension",
-          "description": ""
+          "role": "dimension"
         },
         {
           "name": "settore_attivita",
           "type": "VARCHAR",
-          "role": "dimension",
-          "description": ""
+          "role": "dimension"
         },
         {
           "name": "cod_strumento",
           "type": "VARCHAR",
-          "role": "dimension",
-          "description": ""
+          "role": "dimension"
         },
         {
           "name": "strumento",
           "type": "VARCHAR",
-          "role": "dimension",
-          "description": ""
+          "role": "dimension"
         },
         {
           "name": "elemento_aiuto",
           "type": "DOUBLE",
-          "role": "metric",
-          "description": ""
+          "role": "metric"
         },
         {
           "name": "importo_nominale",
           "type": "DOUBLE",
-          "role": "metric",
-          "description": ""
+          "role": "metric"
         },
         {
           "name": "anno",
           "type": "INTEGER",
           "role": "dimension",
-          "description": "",
           "semantic_type": "year"
         },
         {
           "name": "mese",
           "type": "INTEGER",
           "role": "dimension",
-          "description": "",
           "semantic_type": "month"
         }
       ],
-      "location": {
-        "type": "gcs",
-        "path": "gs://dataciviclab-clean/rna_aiuti_stato/*/rna_aiuti_stato_*_clean.parquet",
-        "multi_file": true
-      },
-      "stage": "incubating",
       "mart_refs": [
         "rna_aiuti_stato__mart_aiuti_per_regione",
         "rna_aiuti_stato__mart_aiuti_per_procedimento",
@@ -233,159 +210,145 @@
         "rna_aiuti_stato__mart_aiuti_temporale",
         "rna_aiuti_stato__mart_aiuti_concentrazione",
         "rna_aiuti_stato__mart_aiuti_limiti"
-      ]
+      ],
+      "last_run": {
+        "at": "2026-11-25T12:34:03.027984+00:00",
+        "year": 2026,
+        "status": "SUCCESS"
+      }
     },
     {
       "slug": "rna_misure",
       "name": "Rna Misure",
       "description": "Leggi, decreti e regimi che autorizzano aiuti di Stato in Italia. Collegabile agli aiuti via CAR. Dati dal Registro Nazionale Aiuti di Stato (MIMIT), 1994-2027.",
-      "source": "",
       "source_id": "mimit_rna",
-      "period": {
-        "start": 1994,
-        "end": 2027
-      },
       "tags": [
         "finanza-pubblica",
         "rna",
         "misure"
       ],
       "category": "finanza-pubblica",
+      "period": {
+        "start": 1994,
+        "end": 2027
+      },
+      "partitions": {
+        "2027": 21156
+      },
       "columns": [
         {
           "name": "car",
           "type": "VARCHAR",
-          "role": "dimension",
-          "description": ""
+          "role": "dimension"
         },
         {
           "name": "car_padre",
           "type": "VARCHAR",
-          "role": "dimension",
-          "description": ""
+          "role": "dimension"
         },
         {
           "name": "car_attivo",
           "type": "VARCHAR",
-          "role": "dimension",
-          "description": ""
+          "role": "dimension"
         },
         {
           "name": "titolo_misura",
           "type": "VARCHAR",
-          "role": "dimension",
-          "description": ""
+          "role": "dimension"
         },
         {
           "name": "des_tipo_misura",
           "type": "VARCHAR",
-          "role": "dimension",
-          "description": ""
+          "role": "dimension"
         },
         {
           "name": "cod_tipo_misura",
           "type": "VARCHAR",
-          "role": "dimension",
-          "description": ""
+          "role": "dimension"
         },
         {
           "name": "data_inizio_misura",
           "type": "VARCHAR",
-          "role": "dimension",
-          "description": ""
+          "role": "dimension"
         },
         {
           "name": "data_fine_misura",
           "type": "VARCHAR",
-          "role": "dimension",
-          "description": ""
+          "role": "dimension"
         },
         {
           "name": "base_giuridica_nazionale",
           "type": "VARCHAR",
-          "role": "dimension",
-          "description": ""
+          "role": "dimension"
         },
         {
           "name": "stato_membro",
           "type": "VARCHAR",
-          "role": "dimension",
-          "description": ""
+          "role": "dimension"
         },
         {
           "name": "cod_amm",
           "type": "VARCHAR",
-          "role": "dimension",
-          "description": ""
+          "role": "dimension"
         },
         {
           "name": "des_autorita",
           "type": "VARCHAR",
-          "role": "dimension",
-          "description": ""
+          "role": "dimension"
         },
         {
           "name": "autorita_concedente",
           "type": "VARCHAR",
-          "role": "dimension",
-          "description": ""
+          "role": "dimension"
         },
         {
           "name": "importo_prestiti_garantiti",
           "type": "DOUBLE",
-          "role": "metric",
-          "description": ""
+          "role": "metric"
         },
         {
           "name": "importo_aiuto_ad_hoc",
           "type": "DOUBLE",
-          "role": "metric",
-          "description": ""
+          "role": "metric"
         },
         {
           "name": "link_aiuto",
           "type": "VARCHAR",
-          "role": "dimension",
-          "description": ""
+          "role": "dimension"
         },
         {
           "name": "flag_quadro",
           "type": "VARCHAR",
-          "role": "dimension",
-          "description": ""
+          "role": "dimension"
         },
         {
           "name": "flag_modifica_regime",
           "type": "VARCHAR",
-          "role": "dimension",
-          "description": ""
+          "role": "dimension"
         },
         {
           "name": "anno",
           "type": "INTEGER",
           "role": "dimension",
-          "description": "",
           "semantic_type": "year"
         },
         {
           "name": "mese",
           "type": "INTEGER",
           "role": "dimension",
-          "description": "",
           "semantic_type": "month"
         }
       ],
-      "location": {
-        "type": "gcs",
-        "path": "gs://dataciviclab-clean/rna_misure/2027/rna_misure_2027_clean.parquet",
-        "multi_file": false
-      },
-      "stage": "incubating",
       "mart_refs": [
         "rna_misure__mart_misure_per_tipo",
         "rna_misure__mart_misure_attive",
         "rna_misure__mart_top_misure"
-      ]
+      ],
+      "last_run": {
+        "at": "2026-11-25T12:34:17.929050+00:00",
+        "year": 2027,
+        "status": "SUCCESS"
+      }
     }
   ],
   "marts": [
@@ -393,322 +356,112 @@
       "slug": "rna_aiuti_stato__mart_aiuti_concedenti",
       "dataset": "rna_aiuti_stato",
       "table": "mart_aiuti_concedenti",
-      "location": {
-        "type": "gcs",
-        "path": "gs://dataciviclab-mart/rna_aiuti_stato/*/mart_aiuti_concedenti.parquet",
-        "multi_file": true
-      }
+      "layout": "glob"
     },
     {
       "slug": "rna_aiuti_stato__mart_aiuti_concentrazione",
       "dataset": "rna_aiuti_stato",
       "table": "mart_aiuti_concentrazione",
-      "location": {
-        "type": "gcs",
-        "path": "gs://dataciviclab-mart/rna_aiuti_stato/*/mart_aiuti_concentrazione.parquet",
-        "multi_file": true
-      }
+      "layout": "glob"
     },
     {
       "slug": "rna_aiuti_stato__mart_aiuti_limiti",
       "dataset": "rna_aiuti_stato",
       "table": "mart_aiuti_limiti",
-      "location": {
-        "type": "gcs",
-        "path": "gs://dataciviclab-mart/rna_aiuti_stato/*/mart_aiuti_limiti.parquet",
-        "multi_file": true
-      }
+      "layout": "glob"
     },
     {
       "slug": "rna_aiuti_stato__mart_aiuti_per_misura",
       "dataset": "rna_aiuti_stato",
       "table": "mart_aiuti_per_misura",
-      "location": {
-        "type": "gcs",
-        "path": "gs://dataciviclab-mart/rna_aiuti_stato/*/mart_aiuti_per_misura.parquet",
-        "multi_file": true
-      }
+      "layout": "glob"
     },
     {
       "slug": "rna_aiuti_stato__mart_aiuti_per_obiettivo",
       "dataset": "rna_aiuti_stato",
       "table": "mart_aiuti_per_obiettivo",
-      "location": {
-        "type": "gcs",
-        "path": "gs://dataciviclab-mart/rna_aiuti_stato/*/mart_aiuti_per_obiettivo.parquet",
-        "multi_file": true
-      }
+      "layout": "glob"
     },
     {
       "slug": "rna_aiuti_stato__mart_aiuti_per_procedimento",
       "dataset": "rna_aiuti_stato",
       "table": "mart_aiuti_per_procedimento",
-      "location": {
-        "type": "gcs",
-        "path": "gs://dataciviclab-mart/rna_aiuti_stato/*/mart_aiuti_per_procedimento.parquet",
-        "multi_file": true
-      }
+      "layout": "glob"
     },
     {
       "slug": "rna_aiuti_stato__mart_aiuti_per_regione",
       "dataset": "rna_aiuti_stato",
       "table": "mart_aiuti_per_regione",
-      "location": {
-        "type": "gcs",
-        "path": "gs://dataciviclab-mart/rna_aiuti_stato/*/mart_aiuti_per_regione.parquet",
-        "multi_file": true
-      }
+      "layout": "glob"
     },
     {
       "slug": "rna_aiuti_stato__mart_aiuti_per_strumento",
       "dataset": "rna_aiuti_stato",
       "table": "mart_aiuti_per_strumento",
-      "location": {
-        "type": "gcs",
-        "path": "gs://dataciviclab-mart/rna_aiuti_stato/*/mart_aiuti_per_strumento.parquet",
-        "multi_file": true
-      }
+      "layout": "glob"
     },
     {
       "slug": "rna_aiuti_stato__mart_aiuti_regimi",
       "dataset": "rna_aiuti_stato",
       "table": "mart_aiuti_regimi",
-      "location": {
-        "type": "gcs",
-        "path": "gs://dataciviclab-mart/rna_aiuti_stato/*/mart_aiuti_regimi.parquet",
-        "multi_file": true
-      }
+      "layout": "glob"
     },
     {
       "slug": "rna_aiuti_stato__mart_aiuti_settore_regione",
       "dataset": "rna_aiuti_stato",
       "table": "mart_aiuti_settore_regione",
-      "location": {
-        "type": "gcs",
-        "path": "gs://dataciviclab-mart/rna_aiuti_stato/*/mart_aiuti_settore_regione.parquet",
-        "multi_file": true
-      }
+      "layout": "glob"
     },
     {
       "slug": "rna_aiuti_stato__mart_aiuti_temporale",
       "dataset": "rna_aiuti_stato",
       "table": "mart_aiuti_temporale",
-      "location": {
-        "type": "gcs",
-        "path": "gs://dataciviclab-mart/rna_aiuti_stato/*/mart_aiuti_temporale.parquet",
-        "multi_file": true
-      }
+      "layout": "glob"
     },
     {
       "slug": "rna_aiuti_stato__mart_aiuti_tipo_beneficiario",
       "dataset": "rna_aiuti_stato",
       "table": "mart_aiuti_tipo_beneficiario",
-      "location": {
-        "type": "gcs",
-        "path": "gs://dataciviclab-mart/rna_aiuti_stato/*/mart_aiuti_tipo_beneficiario.parquet",
-        "multi_file": true
-      }
+      "layout": "glob"
     },
     {
       "slug": "rna_aiuti_stato__mart_aiuti_top_beneficiari",
       "dataset": "rna_aiuti_stato",
       "table": "mart_aiuti_top_beneficiari",
-      "location": {
-        "type": "gcs",
-        "path": "gs://dataciviclab-mart/rna_aiuti_stato/*/mart_aiuti_top_beneficiari.parquet",
-        "multi_file": true
-      }
+      "layout": "glob"
     },
     {
       "slug": "rna_misure__mart_misure_attive",
       "dataset": "rna_misure",
       "table": "mart_misure_attive",
-      "location": {
-        "type": "gcs",
-        "path": "gs://dataciviclab-mart/rna_misure/2027/mart_misure_attive.parquet",
-        "multi_file": false
-      }
+      "layout": "year",
+      "year": 2027,
+      "primary_key": [
+        "anno"
+      ]
     },
     {
       "slug": "rna_misure__mart_misure_per_tipo",
       "dataset": "rna_misure",
       "table": "mart_misure_per_tipo",
-      "location": {
-        "type": "gcs",
-        "path": "gs://dataciviclab-mart/rna_misure/2027/mart_misure_per_tipo.parquet",
-        "multi_file": false
-      }
+      "layout": "year",
+      "year": 2027,
+      "primary_key": [
+        "des_tipo_misura"
+      ]
     },
     {
       "slug": "rna_misure__mart_top_misure",
       "dataset": "rna_misure",
       "table": "mart_top_misure",
-      "location": {
-        "type": "gcs",
-        "path": "gs://dataciviclab-mart/rna_misure/2027/mart_top_misure.parquet",
-        "multi_file": false
-      }
+      "layout": "year",
+      "year": 2027,
+      "primary_key": [
+        "car",
+        "data_inizio_misura"
+      ]
     }
   ],
-  "signals": [
-    {
-      "id": "rna_aiuti_stato",
-      "source_id": "mimit_rna",
-      "status": "ok",
-      "label": "rna_aiuti_stato",
-      "detail": "anni 2017-2026 — mart: si",
-      "action": "",
-      "run": {
-        "run_id": "20261105T205857Z_4f9c7733",
-        "year": 2026,
-        "status": "SUCCESS",
-        "quality_score": {
-          "raw": 100,
-          "clean": 100,
-          "mart": 100
-        },
-        "output_rows": {
-          "clean": 1001955,
-          "mart": 4363
-        },
-        "output_bytes": {
-          "raw": 55483986,
-          "clean": 43269210,
-          "mart": 135492
-        },
-        "started_at": "2026-11-05T20:58:57.709809+00:00",
-        "finished_at": "2026-11-05T20:59:08.770596+00:00",
-        "duration_seconds": 11.061
-      }
-    },
-    {
-      "id": "rna_misure",
-      "source_id": "mimit_rna",
-      "status": "ok",
-      "label": "rna_misure",
-      "detail": "anno 2027 — mart: si",
-      "action": "",
-      "run": {
-        "run_id": "20261105T205909Z_b8e83be1",
-        "year": 2027,
-        "status": "SUCCESS",
-        "quality_score": {
-          "raw": 100,
-          "clean": 100,
-          "mart": 100
-        },
-        "output_rows": {
-          "clean": 21030,
-          "mart": 21063
-        },
-        "output_bytes": {
-          "raw": 2227648,
-          "clean": 1958987,
-          "mart": 927780
-        },
-        "started_at": "2026-11-05T20:59:09.667337+00:00",
-        "finished_at": "2026-11-05T20:59:10.137177+00:00",
-        "duration_seconds": 0.47
-      }
-    }
-  ],
-  "codelists": [],
-  "entities": {
-    "entities": {
-      "Ente (o Impresa)": {
-        "entity": "Ente (o Impresa)",
-        "label": "Ente (o Impresa)",
-        "datasets": [
-          {
-            "slug": "rna_aiuti_stato",
-            "name": "Rna Aiuti Stato",
-            "column": "codice_fiscale_beneficiario",
-            "semantic_type": "fiscal_code"
-          }
-        ],
-        "types": {
-          "fiscal_code": 1
-        }
-      },
-      "Progetto": {
-        "entity": "Progetto",
-        "label": "Progetto",
-        "datasets": [
-          {
-            "slug": "rna_aiuti_stato",
-            "name": "Rna Aiuti Stato",
-            "column": "cup",
-            "semantic_type": "cup_code"
-          }
-        ],
-        "types": {
-          "cup_code": 1
-        }
-      },
-      "Regione": {
-        "entity": "Regione",
-        "label": "Regione",
-        "datasets": [
-          {
-            "slug": "rna_aiuti_stato",
-            "name": "Rna Aiuti Stato",
-            "column": "regione_beneficiario",
-            "semantic_type": "region_code"
-          }
-        ],
-        "types": {
-          "region_code": 1
-        }
-      },
-      "Tempo": {
-        "entity": "Tempo",
-        "label": "Tempo / data",
-        "datasets": [
-          {
-            "slug": "rna_aiuti_stato",
-            "name": "Rna Aiuti Stato",
-            "column": "anno",
-            "semantic_type": "year"
-          },
-          {
-            "slug": "rna_aiuti_stato",
-            "name": "Rna Aiuti Stato",
-            "column": "mese",
-            "semantic_type": "month"
-          },
-          {
-            "slug": "rna_misure",
-            "name": "Rna Misure",
-            "column": "anno",
-            "semantic_type": "year"
-          },
-          {
-            "slug": "rna_misure",
-            "name": "Rna Misure",
-            "column": "mese",
-            "semantic_type": "month"
-          }
-        ],
-        "types": {
-          "year": 2,
-          "month": 2
-        }
-      }
-    },
-    "bridges": [
-      {
-        "from": {
-          "entity": "Progetto",
-          "dataset": "rna_aiuti_stato",
-          "via": "cup_code"
-        },
-        "to": {
-          "entity": "Comune",
-          "bridge": "anac_cup",
-          "on": "cup",
-          "semantic_type": "municipality_code"
-        }
-      }
-    ]
-  }
+  "checks": [],
+  "codelists": []
 }
